@@ -1,0 +1,201 @@
+package main
+
+import (
+	"crypto/tls"
+	"fmt"
+	"net"
+	"os"
+	"strings"
+	"time"
+)
+
+const (
+	ColReset   = "\033[0m"
+	ColRed     = "\x1b[31m"
+	ColGreen   = "\x1b[32m"
+	ColYellow  = "\x1b[33m"
+	ColBlue    = "\x1b[34m"
+	ColMagenta = "\x1b[35m"
+	ColCyan    = "\x1b[36m"
+	ColWhite   = "\x1b[37m"
+	ColBold    = "\x1b[1m"
+)
+
+type CertInfo struct {
+	URL           string
+	Subject       string
+	Issuer        string
+	NotBefore     time.Time
+	NotAfter      time.Time
+	DaysRemaining int
+	Status        string
+	Error         error
+}
+
+func Colourise(text, colour string) string {
+	return colour + text + ColReset
+}
+
+func checkCertificate(url string, timeout time.Duration) CertInfo {
+	info := CertInfo{URL: url}
+
+	// Remove protocol prefix if present
+	url = strings.TrimPrefix(url, "https://")
+	url = strings.TrimPrefix(url, "http://")
+
+	// Add port if not specified
+	if !strings.Contains(url, ":") {
+		url = url + ":443"
+	}
+
+	conn, err := tls.DialWithDialer(
+		&net.Dialer{Timeout: timeout},
+		"tcp", url,
+		&tls.Config{
+			InsecureSkipVerify: true, // For certificate inspection only
+		},
+	)
+
+	if err != nil {
+		info.Error = err
+		info.Status = "ERROR"
+		return info
+	}
+	defer conn.Close()
+
+	certs := conn.ConnectionState().PeerCertificates
+	if len(certs) == 0 {
+		info.Error = fmt.Errorf("no certificates found")
+		info.Status = "ERROR"
+		return info
+	}
+
+	cert := certs[0]
+	info.Subject = cert.Subject.CommonName
+	info.Issuer = cert.Issuer.CommonName
+	info.NotBefore = cert.NotBefore
+	info.NotAfter = cert.NotAfter
+
+	now := time.Now()
+	info.DaysRemaining = int(info.NotAfter.Sub(now).Hours() / 24)
+
+	if info.DaysRemaining < 0 {
+		info.Status = "EXPIRED"
+	} else if info.DaysRemaining < 30 {
+		info.Status = "WARNING"
+	} else if info.DaysRemaining < 90 {
+		info.Status = "SOON"
+	} else {
+		info.Status = "OK"
+	}
+
+	return info
+}
+
+func printResult(info CertInfo) {
+		var statusColor, statusText, emoji string
+
+	switch info.Status {
+	case "OK":
+		statusColor = ColGreen
+		statusText = "OK"
+		emoji = "✅"
+	case "SOON":
+		statusColor = ColYellow
+		statusText = "SOON (< 90 Tage)"
+		emoji = "⚠️"
+	case "WARNING":
+		statusColor = ColRed
+		statusText = "CRITICAL (< 30 Tage)"
+		emoji = "🔴"
+	case "EXPIRED":
+		statusColor = ColRed
+		statusText = "EXPIRED"
+		emoji = "❌"
+	case "ERROR":
+		statusColor = ColRed
+		statusText = "ERROR"
+		emoji = "🔧"
+	}
+	
+	fmt.Printf("%s%s %s%s %s\n", ColBold, statusColor, info.URL, ColReset, emoji)
+
+	fmt.Printf("%s\n", info.URL)
+	fmt.Printf("   Issuer:   %s\n", info.Issuer)
+	fmt.Printf("   Valid:    %s → %s\n",
+		info.NotBefore.Format("2006-01-02"),
+		info.NotAfter.Format("2006-01-02"))
+	fmt.Printf("   Remaining: %d days\n", info.DaysRemaining)
+	
+	if info.Error != nil {
+		fmt.Printf("   Error:    %v\n", info.Error)
+	}
+	fmt.Println()
+
+
+	// Restliche Tage farbig hervorheben
+	daysColor := ColGreen
+	if info.DaysRemaining < 30 {
+		daysColor = ColRed
+	} else if info.DaysRemaining < 90 {
+		daysColor = ColYellow
+	}
+	
+	fmt.Printf("   Remaining: %s%d days%s\n", daysColor, info.DaysRemaining, ColReset)
+	
+	if info.Status != "OK" && info.Status != "SOON" {
+		fmt.Printf("   Status:   %s%s%s\n", statusColor, statusText, ColReset)
+	}
+	
+	if info.Error != nil {
+		fmt.Printf("   Error:    %s%s%s\n", ColRed, info.Error, ColReset)
+	}
+	fmt.Println()
+}
+
+func main() {
+	// sites list
+	sites := []string{
+		"forum.linuxguides.de",
+		"github.com",
+		"gearnews.de",
+	}
+
+	// Optional: Read from command line args
+	if len(os.Args) > 1 {
+		sites = os.Args[1:]
+	}
+
+	timeout := 5 * time.Second
+	results := make([]CertInfo, len(sites))
+
+	fmt.Println("=== SSL Certificate Checker ===\n")
+
+	for i, site := range sites {
+		results[i] = checkCertificate(site, timeout)
+		printResult(results[i])
+	}
+
+	// Summary
+	fmt.Println("=== Summary ===")
+	expired := 0
+	warning := 0
+	ok := 0
+	errors := 0
+
+	for _, r := range results {
+		switch r.Status {
+		case "EXPIRED":
+			expired++
+		case "WARNING", "SOON":
+			warning++
+		case "ERROR":
+			errors++
+		default:
+			ok++
+		}
+	}
+
+	fmt.Printf("OK: %d | Warning: %d | Expired: %d | Errors: %d\n",
+		ok, warning, expired, errors)
+}
