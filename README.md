@@ -8,4 +8,4 @@
 :white_check_mark: [Arch Linux](https://archlinux.org/)
 
 ## License
-kvm-configurator is licensed under the [MIT License](LICENSE).
+go-check-cert is licensed under the [MIT License](LICENSE).
