@@ -14,12 +14,12 @@ import (
 
 // Farben
 const (
-	Reset  = "\033[0m"
-	Bold   = "\033[1m"
-	Red    = "\033[31m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
-	Cyan   = "\033[36m"
+	ColReset  = "\033[0m"
+	ColBold   = "\033[1m"
+	ColRed    = "\033[31m"
+	ColGreen  = "\033[32m"
+	ColYellow = "\033[33m"
+	ColCyan   = "\033[36m"
 )
 
 type CertInfo struct {
@@ -32,7 +32,7 @@ type CertInfo struct {
 	Error         error
 }
 
-// --- Zertifikat prüfen ---
+// Check certificate
 func checkCertificate(url string, timeout time.Duration) CertInfo {
 	info := CertInfo{URL: url}
 	
@@ -75,7 +75,7 @@ func checkCertificate(url string, timeout time.Duration) CertInfo {
 	return info
 }
 
-// --- URLs aus Datei lesen ---
+// Read URLs from file
 func readURLsFromFile(filename string) ([]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -94,44 +94,44 @@ func readURLsFromFile(filename string) ([]string, error) {
 	return urls, scanner.Err()
 }
 
-// --- Ergebnisse anzeigen ---
+// Show results
 func printResults(results []CertInfo) {
-	fmt.Printf("\n%s=== ERGEBNISSE ===%s\n\n", Bold, Reset)
+	fmt.Printf("\n%s=== RESULTS ===%s\n\n", ColBold, ColReset)
 	
 	for _, r := range results {
-		var color, emoji string
+		var color string
 		switch r.Status {
 		case "OK":
-			color, emoji = Green, "✅"
+			color = ColGreen
 		case "SOON":
-			color, emoji = Yellow, "⚠️"
+			color = ColYellow
 		case "WARNING":
-			color, emoji = Red, "🔴"
+			color = ColRed
 		case "EXPIRED":
-			color, emoji = Red, "💥"
+			color = ColRed
 		default:
-			color, emoji = Red, "🔧"
+			color = ColRed
 		}
 		
-		fmt.Printf("%s%s %s%s %s\n", Bold, color, r.URL, Reset, emoji)
+		fmt.Printf("%s%s %s%s\n", ColBold, color, r.URL, ColReset)
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
 		fmt.Printf("   Valid:  %s → %s\n", r.NotBefore.Format("2006-01-02"), r.NotAfter.Format("2006-01-02"))
 		
-		daysColor := Green
+		daysColor := ColGreen
 		if r.DaysRemaining < 30 {
-			daysColor = Red
+			daysColor = ColRed
 		} else if r.DaysRemaining < 60 {
-			daysColor = Yellow
+			daysColor = ColYellow
 		}
-		fmt.Printf("   Days:   %s%d%s\n", daysColor, r.DaysRemaining, Reset)
-		
+		fmt.Printf("   Days:   %s%d%s\n", daysColor, r.DaysRemaining, ColReset)
+		fmt.Printf("------------------------------------")
 		if r.Error != nil {
-			fmt.Printf("   Error:  %s%s%s\n", Red, r.Error, Reset)
+			fmt.Printf("   Error:  %s%s%s\n", ColRed, r.Error, ColReset)
 		}
 		fmt.Println()
 	}
 	
-	// Zusammenfassung
+	// Summary
 	ok, warn, exp, err := 0, 0, 0, 0
 	for _, r := range results {
 		switch r.Status {
@@ -142,31 +142,32 @@ func printResults(results []CertInfo) {
 		}
 	}
 	
-	fmt.Printf("%s=== SUMMARY ===%s\n", Bold, Reset)
+	fmt.Printf("%s=== SUMMARY ===%s\n", ColBold, ColReset)
 	fmt.Printf("%sOK: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n", 
-		Green, ok, Reset, Yellow, warn, Reset, Red, exp, Reset, Red, err, Reset)
+		ColGreen, ok, ColReset, ColYellow, warn, ColReset, ColRed, exp, ColReset, ColRed, err, ColReset)
 }
 
-// --- Hauptprogramm ---
+// main
 func main() {
 	var input string
 	
-	// huh Eingabe
+	// input
 	err := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
 				Title("🔍 SSL Certificate Checker").
-				Description("Dateiname oder URL eingeben (Leer = urls.txt)").
+				Description("Enter file name or URL (Empty = urls.txt)").
 				Value(&input),
 		),
 	).Run()
 	
 	if err != nil {
-		fmt.Printf("%sAbbruch.%s\n", Red, Reset)
+		fmt.Printf("%sAbort.%s\n", ColRed, ColReset)
 		return
 	}
 	
-	// Datei oder URL bestimmen
+	// specify if the input is a file or URL
+	// file must be in the same dir
 	filename := input
 	if filename == "" {
 		filename = "urls.txt"
@@ -174,23 +175,23 @@ func main() {
 	
 	var urls []string
 	if _, err := os.Stat(filename); err == nil {
-		// Datei existiert
+		// file exists
 		urls, err = readURLsFromFile(filename)
 		if err != nil {
-			fmt.Printf("%sFehler beim Lesen: %s%s\n", Red, err, Reset)
+			fmt.Printf("%sError reading: %s%s\n", ColRed, err, ColReset)
 			return
 		}
 	} else {
-		// Als URL behandeln
+		// treat as URL
 		urls = []string{input}
 	}
 	
 	if len(urls) == 0 {
-		fmt.Printf("%sKeine URLs gefunden.%s\n", Yellow, Reset)
+		fmt.Printf("%sNo URLs found.%s\n", ColYellow, ColReset)
 		return
 	}
 	
-	// Prüfen
+	// check
 	timeout := 5 * time.Second
 	results := make([]CertInfo, len(urls))
 	
@@ -198,16 +199,6 @@ func main() {
 		results[i] = checkCertificate(url, timeout)
 	}
 	
-	// Anzeigen
+	// print the results
 	printResults(results)
-	
-	// Bestätigung zum Beenden
-	var confirm bool
-	_ = huh.NewForm(
-		huh.NewGroup(
-			huh.NewConfirm().
-				Title("Beenden?").
-				Value(&confirm),
-		),
-	).Run()
 }
