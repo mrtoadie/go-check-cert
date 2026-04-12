@@ -10,7 +10,7 @@ import (
 func ParseInput(input string) ([]string, error) {
 	input = strings.TrimSpace(input)
 	if input == "" {
-		input = "../config/urls.txt"
+		input = "urls.txt"
 	}
 
 	// check if it is an existing file
