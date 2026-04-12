@@ -12,7 +12,23 @@
 You can enter individual URLs, such as
 *github.com* or *github.com, codeberg.org*
 
-### Tested under
+## Output
+```bash
+=== RESULTS ===
+
+1. forum.linuxguides.de
+   Days:  44 | Valid: 26.02.26 → 27.05.26
+   Issuer: R12
+------------------------------------
+2. github.com
+   Days:  52 | Valid: 06.03.26 → 03.06.26
+   Issuer: Sectigo Public Server Authentication CA DV E36
+------------------------------------
+=== SUMMARY ===
+OK: 0 | Warn: 2 | Exp: 0 | Err: 0
+```
+
+## Tested on
 :white_check_mark: [Arch Linux](https://archlinux.org/)
 
 ## License
