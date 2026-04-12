@@ -5,6 +5,13 @@
 - checks the validity of website certificates
 - either a single URL or a (batch) list of URLs from a file
 
+## Usage
+```bash
+./cert-check
+```
+You can enter individual URLs, such as
+github.com or github.com, codeberg.org
+
 ### Tested under
 :white_check_mark: [Arch Linux](https://archlinux.org/)
 
