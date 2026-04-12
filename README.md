@@ -10,7 +10,7 @@
 ./cert-check
 ```
 You can enter individual URLs, such as
-github.com or github.com, codeberg.org
+*github.com* or *github.com, codeberg.org*
 
 ### Tested under
 :white_check_mark: [Arch Linux](https://archlinux.org/)
