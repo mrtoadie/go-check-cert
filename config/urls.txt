@@ -2,3 +2,4 @@ forum.linuxguides.de
 github.com
 example.com
 https://www.gearnews.de
+toadie.de
