@@ -46,8 +46,8 @@ func PrintResults(results []checker.CertInfo) {
 		daysC := getDaysColor(r.DaysRemaining)
 
 		fmt.Printf("%d. %s%s%s\n", num, c, r.URL, ColReset)
-		fmt.Printf("   Days: %s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
-			r.NotBefore.Format("02.01.06"), r.NotAfter.Format("02.01.06"))
+		fmt.Printf("   Days:%s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
+			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
 
 		if r.Error != nil {

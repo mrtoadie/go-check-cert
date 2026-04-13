@@ -26,7 +26,7 @@ func main() {
 				Title("=== SSL CHECKER ===").
 				Description("Filename OR URLs (separated by commas)").
 				Value(&input),
-		),
+		).WithTheme(huh.ThemeBase16()),
 	).Run()
 
 	if err != nil {
