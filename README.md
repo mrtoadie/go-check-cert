@@ -6,9 +6,15 @@
 - checks the validity of website certificates
 - either a single URL or a (batch) list of URLs from a file
 
-## Usage
+## Install & Usage
+### Arch Linux
+Install from AUR
 ```bash
-./cert-check
+yay -S cert-checker
+```
+Run
+```bash
+cert-checker
 ```
 You can enter individual URLs, such as
 *github.com* or *github.com, codeberg.org*
