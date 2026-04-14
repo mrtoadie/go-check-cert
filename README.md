@@ -8,7 +8,7 @@
 
 ## Install & Usage
 ### Arch Linux
-Install from AUR
+Install from [AUR](https://aur.archlinux.org/packages/cert-checker)
 ```bash
 yay -S cert-checker
 ```
