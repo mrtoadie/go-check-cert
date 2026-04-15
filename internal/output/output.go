@@ -1,3 +1,4 @@
+// internal/output/output.go
 package output
 
 import (

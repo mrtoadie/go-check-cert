@@ -1,9 +1,9 @@
-// Version 1.0
+// Version 1.0.3
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: Apr 13 2026
+// last modification: Apr 15 2026
 package main
 
 import (
@@ -60,7 +60,7 @@ func main() {
 
 	results := make([]checker.CertInfo, len(urls))
 	for i, u := range urls {
-		results[i] = checker.CheckCertificate(u, 5*time.Second)
+		results[i] = checker.CheckCertExpiry(u, 5*time.Second)
 	}
 
 	// print results

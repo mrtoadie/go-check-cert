@@ -1,3 +1,4 @@
+// internal/checker/checker.go
 package checker
 
 import (
@@ -19,7 +20,7 @@ type CertInfo struct {
 }
 
 // connects to the host and extracts certificate data
-func CheckCertificate(url string, timeout time.Duration) CertInfo {
+func CheckCertExpiry(url string, timeout time.Duration) CertInfo {
 	info := CertInfo{URL: url}
 	
 	// URL bereinigen

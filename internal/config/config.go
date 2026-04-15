@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
 )
 
@@ -33,7 +34,7 @@ func InitConfig() ([]string, bool, error) {
 	}
 
 	// file does NOT exist > create it
-	fmt.Printf("\033[34mFirst run: Creating configuration file...\033[0m\n")
+	fmt.Print("First run: Creating configuration file...\n", output.ColBlue)
 
 	// create directory
 	if err := os.MkdirAll(configPath, 0755); err != nil {
@@ -60,7 +61,7 @@ func InitConfig() ([]string, bool, error) {
 		}
 	}
 
-	fmt.Printf("\033[32mCreated: %s\033[0m\n", configFile)
+	fmt.Println("Created:", configFile, output.ColYellow)
 	fmt.Printf("You can edit this file to add your own URLs.\n\n")
 
 	return defaultURLs, true, nil
