@@ -50,7 +50,14 @@ func PrintResults(results []checker.CertInfo) {
 		fmt.Printf("   Days:%s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
-
+		// new
+		fmt.Printf("   Serialnumber:  %s\n", r.SerialNumber)
+		//fmt.Printf("   Subject: %s\n", r.Subject)
+		//
+		// key info
+		fmt.Printf("   Key:     %s %d-bit | Sig: %s\n", 
+			r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
+		//
 		if r.Error != nil {
 			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
 		}
