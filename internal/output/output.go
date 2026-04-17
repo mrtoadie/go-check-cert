@@ -3,6 +3,7 @@ package output
 
 import (
 	"fmt"
+	"strings"
 	"cert-checker/internal/checker"
 )
 
@@ -46,22 +47,31 @@ func PrintResults(results []checker.CertInfo) {
 		c := GetColor(r.Status)
 		daysC := getDaysColor(r.DaysRemaining)
 
-		fmt.Printf("%d. %s%s%s\n", num, c, r.URL, ColReset)
+		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
 		fmt.Printf("   Days:%s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
 		// new
-		fmt.Printf("   Serialnumber:  %s\n", r.SerialNumber)
+		fmt.Printf("   Serialnumber: %s\n", r.SerialNumber)
 		//fmt.Printf("   Subject: %s\n", r.Subject)
 		//
 		// key info
-		fmt.Printf("   Key:     %s %d-bit | Sig: %s\n", 
+		fmt.Printf("   Key: %s %d-bit | Sig: %s\n", 
 			r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
+		
+		// sans
+		if len(r.SANs) > 0 {
+			sansStr := strings.Join(r.SANs, ", ")
+			if len(sansStr) > 60 {
+				sansStr = sansStr[:57] + "..."
+			}
+			fmt.Printf("   SANs: %s\n", sansStr)
+		}
 		//
 		if r.Error != nil {
 			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
 		}
-		fmt.Printf("%s------------------------------------%s\n", ColBlue, ColReset)
+		fmt.Printf("%s ------------------------------------%s\n", ColBlue, ColReset)
 	}
 
 	// count summary
