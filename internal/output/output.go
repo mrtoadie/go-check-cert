@@ -48,7 +48,30 @@ func PrintResults(results []checker.CertInfo) {
 		daysC := getDaysColor(r.DaysRemaining)
 
 		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
-		fmt.Printf("   Days:%s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
+
+		statusLine := fmt.Sprintf("Status: %s%-10s%s", c, r.Status, ColReset)
+		if !r.IsChainComplete {
+			statusLine += fmt.Sprintf(" | %s CHAIN ISSUE%s", ColRed, ColReset)
+		} else {
+			statusLine += fmt.Sprintf(" | %s CHAIN OK%s", ColGreen, ColReset)
+		}
+		fmt.Println(statusLine)
+
+		// Chain Details
+		fmt.Printf("   Chain Length: %d Certificates\n", r.ChainLength)
+		if r.IsSelfSigned {
+			fmt.Printf("   %s⚠️ Self-Signed certificate%s\n", ColYellow, ColReset)
+		}
+		
+		if !r.IsChainComplete && r.ChainError != "" {
+			fmt.Printf("   %sFehler: %s%s\n", ColRed, r.ChainError, ColReset)
+		}
+		
+		if r.RootIssuer != "" {
+			fmt.Printf("   Root Issuer: %s\n", r.RootIssuer)
+		}
+	/////
+		fmt.Printf("   Days: %s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
 		// new

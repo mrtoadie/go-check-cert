@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -33,6 +34,13 @@ type CertInfo struct {
 	SANs               []string //list of alternate names
 	ThumbprintSHA1     string
 	ThumbprintSHA256   string
+
+	// chain of trust
+	ChainLength int
+	IsChainComplete bool
+	ChainError string
+	IsSelfSigned bool
+	RootIssuer	string
 }
 
 // connects to the host and extracts certificate data
@@ -60,6 +68,53 @@ func CheckCertExpiry(url string, timeout time.Duration) CertInfo {
 	}
 
 	cert := certs[0]
+	info.ChainLength = len(certs)
+
+	// chain validation
+	// self signed?
+	info.IsSelfSigned = cert.Issuer.String() == cert.Subject.String()
+
+	// try to validate the chain
+	// create an x509.CertPool with the collected certificates
+	pool := x509.NewCertPool()
+	for _, c := range certs {
+		pool.AddCert(c)
+	}
+
+	// validation options
+	opts := x509.VerifyOptions{
+		Roots:         pool, // using the collected chain as a root pool
+		CurrentTime:   time.Now(),
+		DNSName:       strings.Split(url, ":")[0], // hostname for SAN check
+		Intermediates: pool, // chain creation
+	}
+
+	// attempting validation
+	// if InsecureSkipVerify was true, we have the chain but not validated
+	// now let's try explicitly
+	_, err = cert.Verify(opts)
+	
+	if err != nil {
+		info.ChainError = err.Error()
+		info.IsChainComplete = false
+		
+		// specific error analysis
+		if strings.Contains(err.Error(), "certificate signed by unknown authority") {
+			// often missing intermediate or unknown root
+			info.ChainError = "Missing intermediate or unknown root certificate"
+		}
+	} else {
+		info.IsChainComplete = true
+		info.ChainError = ""
+	}
+
+	// extract root issuer (the last certificate in the chain is usually the root)
+	if len(certs) > 0 {
+		rootCert := certs[len(certs)-1]
+		info.RootIssuer = rootCert.Issuer.CommonName
+	}
+
+//////
 	//info.Issuer = cert.Issuer.CommonName
 	info.Issuer = cert.Issuer.String()
 	// new
@@ -108,7 +163,13 @@ func CheckCertExpiry(url string, timeout time.Duration) CertInfo {
 	//
 
 	// determine status
-	if info.DaysRemaining < 0 {
+	if !info.IsChainComplete {
+		if info.DaysRemaining >= 0 {
+			info.Status = "WARNING"
+		} else {
+			info.Status = "EXPIRED"
+		}
+	} else if info.DaysRemaining < 0 {
 		info.Status = "EXPIRED"
 	} else if info.DaysRemaining < 30 {
 		info.Status = "WARNING"
