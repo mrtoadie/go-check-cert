@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-04-19T21:59:47+02:00",
+  "total_count": 4,
+  "results": [
+    {
+      "URL": "archlinux.org",
+      "Issuer": "CN=E7,O=Let's Encrypt,C=US",
+      "Subject": "archlinux.org",
+      "SerialNumber": "501723845572470313389773169616896755109263",
+      "NotBefore": "2026-04-13T11:59:12Z",
+      "NotAfter": "2026-07-12T11:59:11Z",
+      "DaysRemaining": 83,
+      "Status": "OK",
+      "Error": null,
+      "KeyAlgorithm": "ECDSA",
+      "KeySize": 256,
+      "SignatureAlgorithm": "ECDSA-SHA384",
+      "SANs": [
+        "archlinux.org"
+      ],
+      "ThumbprintSHA1": "b36e7e96c849673e16903dd2a17c684a2ac0be02",
+      "ThumbprintSHA256": "7b76334e7e52028a90f09baa408f1a2a71a714369902f146d8a2a742150db3a1",
+      "ChainLength": 2,
+      "IsChainComplete": true,
+      "ChainError": "",
+      "IsSelfSigned": false,
+      "RootIssuer": "ISRG Root X1"
+    },
+    {
+      "URL": "github.com",
+      "Issuer": "CN=Sectigo Public Server Authentication CA DV E36,O=Sectigo Limited,C=GB",
+      "Subject": "github.com",
+      "SerialNumber": "39557711522153605937503944820825465427",
+      "NotBefore": "2026-03-06T00:00:00Z",
+      "NotAfter": "2026-06-03T23:59:59Z",
+      "DaysRemaining": 45,
+      "Status": "SOON",
+      "Error": null,
+      "KeyAlgorithm": "ECDSA",
+      "KeySize": 256,
+      "SignatureAlgorithm": "ECDSA-SHA256",
+      "SANs": [
+        "github.com",
+        "www.github.com"
+      ],
+      "ThumbprintSHA1": "ab58ea128ba92ca69a31b36b4e545653eed2a6cf",
+      "ThumbprintSHA256": "9716d39441ca651c51be78e969ca385ec213ec17715b8c91f01ee652f90fc62c",
+      "ChainLength": 3,
+      "IsChainComplete": true,
+      "ChainError": "",
+      "IsSelfSigned": false,
+      "RootIssuer": "USERTrust ECC Certification Authority"
+    },
+    {
+      "URL": "ubuntu.com",
+      "Issuer": "CN=R12,O=Let's Encrypt,C=US",
+      "Subject": "ubuntu.com",
+      "SerialNumber": "588183328622646244879507649310188122479749",
+      "NotBefore": "2026-04-17T04:13:36Z",
+      "NotAfter": "2026-07-16T04:13:35Z",
+      "DaysRemaining": 87,
+      "Status": "OK",
+      "Error": null,
+      "KeyAlgorithm": "RSA",
+      "KeySize": 2048,
+      "SignatureAlgorithm": "SHA256-RSA",
+      "SANs": [
+        "ubuntu.com",
+        "www.ubuntu.com"
+      ],
+      "ThumbprintSHA1": "f39b552a2183a34263e8566cc02eece120cc3996",
+      "ThumbprintSHA256": "f3a90c7328568d1e032c0202b5ed49c9a5327e6650e0335ce182a81a0896ff0e",
+      "ChainLength": 2,
+      "IsChainComplete": true,
+      "ChainError": "",
+      "IsSelfSigned": false,
+      "RootIssuer": "ISRG Root X1"
+    },
+    {
+      "URL": "linuxcommunity.io",
+      "Issuer": "CN=WE1,O=Google Trust Services,C=US",
+      "Subject": "linuxcommunity.io",
+      "SerialNumber": "289311228209441141257262774674593578366",
+      "NotBefore": "2026-02-23T07:36:54Z",
+      "NotAfter": "2026-05-24T08:36:47Z",
+      "DaysRemaining": 34,
+      "Status": "SOON",
+      "Error": null,
+      "KeyAlgorithm": "ECDSA",
+      "KeySize": 256,
+      "SignatureAlgorithm": "ECDSA-SHA256",
+      "SANs": [
+        "linuxcommunity.io",
+        "*.linuxcommunity.io"
+      ],
+      "ThumbprintSHA1": "5a2ca02b7195d0e978779dae6b07fe6954673e48",
+      "ThumbprintSHA256": "aa8534a227cf12c73c0fadbc37530d9d172c5ad21c7477815e80a9eca4cc86d5",
+      "ChainLength": 3,
+      "IsChainComplete": true,
+      "ChainError": "",
+      "IsSelfSigned": false,
+      "RootIssuer": "GlobalSign Root CA"
+    }
+  ]
+}

@@ -2,9 +2,13 @@
 package output
 
 import (
+	"cert-checker/internal/checker"
+	"encoding/json"
 	"fmt"
 	"strings"
-	"cert-checker/internal/checker"
+
+	"os"
+	"time"
 )
 
 const (
@@ -14,6 +18,38 @@ const (
 	ColYellow = "\033[33m"
 	ColBlue   = "\x1b[34m"
 )
+
+// saves the results as JSON
+func ExportJSON(results []checker.CertInfo, filename string) error {
+	if filename == "" {
+		return nil
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("could not create file %s: %w", filename, err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+	report := struct {
+		GeneratedAt string             `json:"generated_at"`
+		TotalCount  int                `json:"total_count"`
+		Results     []checker.CertInfo `json:"results"`
+	}{
+		GeneratedAt: time.Now().Format(time.RFC3339),
+		TotalCount:  len(results),
+		Results:     results,
+	}
+
+	if err := encoder.Encode(report); err != nil {
+		return fmt.Errorf("couldn't write JSON: %w", err)
+	}
+
+	return nil
+}
 
 // selects the color based on the status of the certificate
 func GetColor(status string) string {
@@ -62,15 +98,15 @@ func PrintResults(results []checker.CertInfo) {
 		if r.IsSelfSigned {
 			fmt.Printf("   %s⚠️ Self-Signed certificate%s\n", ColYellow, ColReset)
 		}
-		
+
 		if !r.IsChainComplete && r.ChainError != "" {
 			fmt.Printf("   %sFehler: %s%s\n", ColRed, r.ChainError, ColReset)
 		}
-		
+
 		if r.RootIssuer != "" {
 			fmt.Printf("   Root Issuer: %s\n", r.RootIssuer)
 		}
-	/////
+		/////
 		fmt.Printf("   Days: %s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
@@ -79,9 +115,9 @@ func PrintResults(results []checker.CertInfo) {
 		//fmt.Printf("   Subject: %s\n", r.Subject)
 		//
 		// key info
-		fmt.Printf("   Key: %s %d-bit | Sig: %s\n", 
+		fmt.Printf("   Key: %s %d-bit | Sig: %s\n",
 			r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
-		
+
 		// sans
 		if len(r.SANs) > 0 {
 			sansStr := strings.Join(r.SANs, ", ")

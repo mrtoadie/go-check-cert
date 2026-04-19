@@ -1,9 +1,9 @@
-// Version 1.0.3
+// Version 1.0.6
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: Apr 15 2026
+// last modification: Apr 19 2026
 package main
 
 import (
@@ -11,11 +11,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/charmbracelet/huh"
 	"cert-checker/internal/checker"
 	"cert-checker/internal/config"
 	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
+
+	"github.com/charmbracelet/huh"
 )
 
 func main() {
@@ -65,4 +66,31 @@ func main() {
 
 	// print results
 	output.PrintResults(results)
+
+	// JSON export / save
+	var saveJSON bool
+	err = huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title("Save results?").
+				Description("Do you want to save the results as JSON?").
+				Value(&saveJSON),
+		).WithTheme(huh.ThemeBase16()),
+	).Run()
+
+	if err != nil || !saveJSON {
+		fmt.Println("\nBye...")
+		return
+	}
+
+	// define filename
+	filename := fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405"))
+
+	// export
+	if err := output.ExportJSON(results, filename); err != nil {
+		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
+
+	fmt.Printf("\n%sSaved successfully: %s%s\n", output.ColGreen, filename, output.ColReset)
 }
