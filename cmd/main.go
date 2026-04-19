@@ -8,7 +8,8 @@ package main
 
 import (
 	"fmt"
-	"os"
+		"os"
+	"path/filepath"
 	"time"
 
 	"cert-checker/internal/checker"
@@ -83,8 +84,16 @@ func main() {
 		return
 	}
 
+homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("%sError: Could not find home directory: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
+
 	// define filename
-	filename := fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405"))
+	filename := filepath.Join(homeDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
+	
+	//filename := fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405"))
 
 	// export
 	if err := output.ExportJSON(results, filename); err != nil {
