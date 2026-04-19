@@ -37,6 +37,7 @@ OK: 0 | Warn: 2 | Exp: 0 | Err: 0
 
 ## Tested on
 :white_check_mark: [Arch Linux](https://archlinux.org/)
+:white_check_mark: [Solus](https://getsol.us/)
 
 ## License
 go-check-cert is licensed under the [MIT License](LICENSE).
