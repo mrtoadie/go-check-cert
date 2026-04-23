@@ -5,21 +5,32 @@ import (
 	"bufio"
 	"os"
 	"strings"
+
+	"cert-checker/internal/checker"
 )
 
-// decides whether a file is read or parsed as a list.
+// ParseInput decides centrally whether the input is a file or a list of URLs
 func ParseInput(input string) ([]string, error) {
 	input = strings.TrimSpace(input)
 	if input == "" {
+		// Default behavior: Try to read urls.txt
 		input = "urls.txt"
 	}
 
-	// check if it is an existing file
-	if _, err := os.Stat(input); err == nil {
+	// central decision: Is it a file?
+	if checker.IsFilePath(input) {
+		// if it's a file, check if it's a certificate or a URL list
+		if strings.HasSuffix(input, ".pem") ||
+			strings.HasSuffix(input, ".crt") ||
+			strings.HasSuffix(input, ".cer") ||
+			strings.HasSuffix(input, ".key") {
+			return []string{input}, nil // single certificate
+		}
+		// otherwise, it's a text file with URLs
 		return ReadURLsFromFile(input)
 	}
 
-	// otherwise treat as comma separated URLs
+	// if not a file, treat as comma-separated URLs
 	var urls []string
 	parts := strings.Split(input, ",")
 	for _, p := range parts {
@@ -31,7 +42,7 @@ func ParseInput(input string) ([]string, error) {
 	return urls, nil
 }
 
-// reads URLs from a text file.
+// ReadURLsFromFile reads a list of URLs from a text file
 func ReadURLsFromFile(filename string) ([]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -43,6 +54,7 @@ func ReadURLsFromFile(filename string) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+		// skip empty lines and comments
 		if line != "" && !strings.HasPrefix(line, "#") {
 			urls = append(urls, line)
 		}

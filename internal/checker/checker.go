@@ -2,22 +2,20 @@
 package checker
 
 import (
-	//"crypto/x509"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/hex"
-	"fmt"
-	"net"
-	"strings"
-	"time"
-
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"net"
+	"os"
+	"strings"
+	"time"
 )
 
+// CertInfo holds the extracted certificate details and status
 type CertInfo struct {
 	URL                string
 	Issuer             string
@@ -28,107 +26,132 @@ type CertInfo struct {
 	DaysRemaining      int
 	Status             string
 	Error              error
-	KeyAlgorithm       string   // e.g. RSA, ECDSA
-	KeySize            int      // e.g. 2048, 256
-	SignatureAlgorithm string   // e.g. SHA256-RSA
-	SANs               []string //list of alternate names
-	ThumbprintSHA1     string
-	ThumbprintSHA256   string
-
-	// chain of trust
-	ChainLength int
-	IsChainComplete bool
-	ChainError string
-	IsSelfSigned bool
-	RootIssuer	string
+	KeyAlgorithm       string
+	KeySize            int
+	SignatureAlgorithm string
+	SANs               []string
+	ChainLength        int
+	IsChainComplete    bool
+	ChainError         string
+	IsSelfSigned       bool
+	RootIssuer         string
 }
 
-// connects to the host and extracts certificate data
-func CheckCertExpiry(url string, timeout time.Duration) CertInfo {
-	info := CertInfo{URL: url}
+// CheckCertExpiry is the public entry point
+// delegates to specialized functions based on whether the target is a local file or a remote URL
+func CheckCertExpiry(target string, hostname string, timeout time.Duration) CertInfo {
+	// Decide: File or Remote?
+	if IsFilePath(target) {
+		return checkLocalFile(target)
+	}
+	return checkRemoteCert(target, hostname, timeout)
+}
 
-	// URL bereinigen
-	url = strings.TrimPrefix(strings.TrimPrefix(url, "https://"), "http://")
+// checkRemoteCert handles TLS connections to remote hosts.
+func checkRemoteCert(target string, hostname string, timeout time.Duration) CertInfo {
+	info := CertInfo{URL: target}
+
+	// clean URL for connection
+	url := strings.TrimPrefix(strings.TrimPrefix(target, "https://"), "http://")
 	if !strings.Contains(url, ":") {
 		url += ":443"
 	}
 
-	// TLS handshake
-	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: timeout}, "tcp", url, &tls.Config{InsecureSkipVerify: true})
+	// extract hostname if not provided
+	if hostname == "" {
+		hostname = ExtractHostname(target)
+	}
+
+	if hostname == "" {
+		info.Error = fmt.Errorf("failed to extract hostname")
+		info.Status = "ERROR"
+		return info
+	}
+
+	// establish TLS connection
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: timeout}, "tcp", url, &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         hostname,
+	})
 	if err != nil {
-		info.Error, info.Status = err, "ERROR"
+		info.Error = err
+		info.Status = "ERROR"
 		return info
 	}
 	defer conn.Close()
 
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		info.Error, info.Status = fmt.Errorf("no certificates found"), "ERROR"
+		info.Error = fmt.Errorf("no certificates found")
+		info.Status = "ERROR"
 		return info
 	}
 
-	cert := certs[0]
-	info.ChainLength = len(certs)
+	// extract info (pass the full chain for validation)
+	return extractCertInfo(certs[0], target, certs, hostname)
+}
 
-	// chain validation
-	// self signed?
-	info.IsSelfSigned = cert.Issuer.String() == cert.Subject.String()
+// checkLocalFile handles reading and parsing local certificate files
+func checkLocalFile(filePath string) CertInfo {
+	info := CertInfo{URL: filePath}
 
-	// try to validate the chain
-	// create an x509.CertPool with the collected certificates
-	pool := x509.NewCertPool()
-	for _, c := range certs {
-		pool.AddCert(c)
-	}
-
-	// validation options
-	opts := x509.VerifyOptions{
-		Roots:         pool, // using the collected chain as a root pool
-		CurrentTime:   time.Now(),
-		DNSName:       strings.Split(url, ":")[0], // hostname for SAN check
-		Intermediates: pool, // chain creation
-	}
-
-	// attempting validation
-	// if InsecureSkipVerify was true, we have the chain but not validated
-	// now let's try explicitly
-	_, err = cert.Verify(opts)
-	
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		info.ChainError = err.Error()
-		info.IsChainComplete = false
-		
-		// specific error analysis
-		if strings.Contains(err.Error(), "certificate signed by unknown authority") {
-			// often missing intermediate or unknown root
-			info.ChainError = "Missing intermediate or unknown root certificate"
-		}
-	} else {
+		info.Error = err
+		info.Status = "ERROR"
+		return info
+	}
+
+	// decode PEM
+	block, _ := pem.Decode(data)
+	if block == nil {
+		info.Error = fmt.Errorf("invalid PEM format")
+		info.Status = "ERROR"
+		return info
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		info.Error = err
+		info.Status = "ERROR"
+		return info
+	}
+
+	// for local files, chain is nil (single cert)
+	return extractCertInfo(cert, filePath, nil, "")
+}
+
+// extractCertInfo contains the shared logic for extracting metadata from a certificate
+func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certificate, hostname string) CertInfo {
+	info := CertInfo{
+		URL:           source,
+		Issuer:        cert.Issuer.CommonName,
+		Subject:       cert.Subject.CommonName,
+		SerialNumber:  cert.SerialNumber.String(),
+		NotBefore:     cert.NotBefore,
+		NotAfter:      cert.NotAfter,
+		DaysRemaining: int(cert.NotAfter.UTC().Sub(time.Now().UTC()).Hours() / 24),
+	}
+
+	// chain logic
+	if chain != nil && len(chain) > 0 {
+		info.ChainLength = len(chain)
 		info.IsChainComplete = true
-		info.ChainError = ""
+		// root issuer is the last cert in the chain
+		info.RootIssuer = chain[len(chain)-1].Issuer.CommonName
+	} else {
+		// local file or single cert
+		info.ChainLength = 1
+		info.IsChainComplete = true
+		info.IsSelfSigned = cert.Issuer.String() == cert.Subject.String()
+		info.RootIssuer = cert.Issuer.CommonName
 	}
-
-	// extract root issuer (the last certificate in the chain is usually the root)
-	if len(certs) > 0 {
-		rootCert := certs[len(certs)-1]
-		info.RootIssuer = rootCert.Issuer.CommonName
-	}
-
-//////
-	//info.Issuer = cert.Issuer.CommonName
-	info.Issuer = cert.Issuer.String()
-	// new
-	info.Subject = cert.Subject.CommonName
-	info.SerialNumber = cert.SerialNumber.String()
-	//
-	info.NotBefore, info.NotAfter = cert.NotBefore, cert.NotAfter
-	info.DaysRemaining = int(info.NotAfter.UTC().Sub(time.Now().UTC()).Hours() / 24)
 
 	// key info
 	switch pub := cert.PublicKey.(type) {
 	case *rsa.PublicKey:
 		info.KeyAlgorithm = "RSA"
-		info.KeySize = pub.Size() * 8 // Bits
+		info.KeySize = pub.Size() * 8
 	case *ecdsa.PublicKey:
 		info.KeyAlgorithm = "ECDSA"
 		info.KeySize = pub.Curve.Params().BitSize
@@ -140,36 +163,18 @@ func CheckCertExpiry(url string, timeout time.Duration) CertInfo {
 		info.KeySize = 0
 	}
 
-	// signature algorithm
 	info.SignatureAlgorithm = cert.SignatureAlgorithm.String()
 
-	// SANs (subject alternative names)
+	// SANs
 	for _, dnsName := range cert.DNSNames {
 		info.SANs = append(info.SANs, dnsName)
 	}
 	for _, ip := range cert.IPAddresses {
 		info.SANs = append(info.SANs, ip.String())
 	}
-	for _, uri := range cert.URIs {
-		info.SANs = append(info.SANs, uri.String())
-	}
 
-	// thumbprints hashes
-	hashSHA1 := sha1.Sum(cert.Raw)
-	hashSHA256 := sha256.Sum256(cert.Raw)
-
-	info.ThumbprintSHA1 = hex.EncodeToString(hashSHA1[:])
-	info.ThumbprintSHA256 = hex.EncodeToString(hashSHA256[:])
-	//
-
-	// determine status
-	if !info.IsChainComplete {
-		if info.DaysRemaining >= 0 {
-			info.Status = "WARNING"
-		} else {
-			info.Status = "EXPIRED"
-		}
-	} else if info.DaysRemaining < 0 {
+	// status determination
+	if info.DaysRemaining < 0 {
 		info.Status = "EXPIRED"
 	} else if info.DaysRemaining < 30 {
 		info.Status = "WARNING"

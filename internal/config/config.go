@@ -46,6 +46,7 @@ func InitConfig() ([]string, bool, error) {
 		"archlinux.org",
 		"github.com",
 		"ubuntu.com",
+		"go.dev",
 	}
 
 	// write file

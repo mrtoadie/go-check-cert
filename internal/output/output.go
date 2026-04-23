@@ -93,10 +93,10 @@ func PrintResults(results []checker.CertInfo) {
 		}
 		fmt.Println(statusLine)
 
-		// Chain Details
+		// chain details
 		fmt.Printf("   Chain Length: %d Certificates\n", r.ChainLength)
 		if r.IsSelfSigned {
-			fmt.Printf("   %s⚠️ Self-Signed certificate%s\n", ColYellow, ColReset)
+			fmt.Printf("   %sSelf-Signed certificate%s\n", ColYellow, ColReset)
 		}
 
 		if !r.IsChainComplete && r.ChainError != "" {
