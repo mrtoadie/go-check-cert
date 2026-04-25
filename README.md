@@ -6,18 +6,29 @@
 - checks the validity of website certificates
 - either a single URL or a (batch) list of URLs from a file
 
-## Install & Usage
+## Install
 ### Arch Linux
 Install from [AUR](https://aur.archlinux.org/packages/cert-checker)
 ```bash
 yay -S cert-checker
 ```
+
+## Usage
 Run
 ```bash
 cert-checker
 ```
-You can enter individual URLs, such as
-*github.com* or *github.com, codeberg.org*
+The input is interactive and automatically detects the correct format.
+
+- Press **Enter** to use the default list of URLs (~/.config/cert-checker/urls.txt)
+
+- To check individual URLs: *github.com* or *github.com*, *ubuntu.com*, *example.org*
+
+- Check local certificate file: '~/github.pem'
+
+- Certificate files can also be checked using a flag: cert-checker --file ~/github.pem
+
+Certificate files with the following extensions work: .pem, .cer, .crt, .key
 
 ## Output
 ```bash
