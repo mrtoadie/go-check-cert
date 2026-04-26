@@ -30,7 +30,7 @@ func InitConfig() ([]string, bool, error) {
 	if _, err := os.Stat(configFile); err == nil {
 		// file exists > read it
 		urls, err := parser.ReadURLsFromFile(configFile)
-		return urls, false, err // false = Datei existierte schon
+		return urls, false, err // false
 	}
 
 	// file does NOT exist > create it

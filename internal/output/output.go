@@ -2,13 +2,13 @@
 package output
 
 import (
-	"cert-checker/internal/checker"
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"os"
+	"strings"
 	"time"
+
+	"cert-checker/internal/checker"
 )
 
 const (

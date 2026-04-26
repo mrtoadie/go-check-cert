@@ -1,9 +1,9 @@
-// Version 1.0.6
+// Version 1.0.8
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: Apr 19 2026
+// last modification: Apr 26 2026
 package main
 
 import (
@@ -139,11 +139,22 @@ func main() {
 		return
 	}
 
+	// determine home dir if not exit
 	homeDir, _ := os.UserHomeDir()
-	// Note: Ensure config.ConfigDir is accessible or define it here if needed
-	// Assuming config.ConfigDir is exported or accessible
+	if err != nil {
+		fmt.Printf("%sError: Could not determine home directory: %v%s\n", output.ColRed, err, output.ColReset)
+		os.Exit(1)
+	}
+
+	// config path/file and filename format
 	configDir := config.ConfigDir
-	filename := filepath.Join(homeDir+"/"+configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
+	filename := filepath.Join(homeDir, configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
+	
+	// directory exists before writing?
+	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+		fmt.Printf("%sError creating directory: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
 
 	if err := output.ExportJSON(results, filename); err != nil {
 		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
