@@ -1,12 +1,13 @@
-// Version 1.0.8
+// Version 1.1.0
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: Apr 26 2026
+// last modification: Apr 28 2026
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"cert-checker/internal/parser"
 
 	"github.com/charmbracelet/huh"
+	"golang.org/x/sync/errgroup"
 )
 
 type InputType int
@@ -95,29 +97,64 @@ func main() {
 			}
 		}
 	}
+	// concurrency
+	// global timeout (e.g. 60 seconds for the entire batch)
+	// this prevents from hanging forever if a server doesn't respond
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 
-	// perform check
+	// errgroup
+	// limits the parallel goroutines to 10
+	// this prevents network stack from being flooded
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(10)
+
+	// prepare results (same length as urls)
 	results := make([]checker.CertInfo, len(urls))
+
+	// loop URLs
 	for i, u := range urls {
-		var hostname string
+		// catch i and u in a closure so that they are bound correctly in the goroutine
+		i, u := i, u
 
-		if inputType == TypeFile {
-			hostname = ""
-			fmt.Printf("%sChecking local file: %s%s\n", output.ColBlue, u, output.ColReset)
-		} else {
-			// use centralized hostname extraction com checker.go
-			hostname = checker.ExtractHostname(u)
-
-			if hostname == "" {
-				fmt.Printf("%sWarning: Empty hostname for '%s', skipping...%s\n", output.ColYellow, u, output.ColReset)
-				results[i] = checker.CertInfo{URL: u, Status: "ERROR", Error: fmt.Errorf("empty hostname")}
-				continue
+		g.Go(func() error {
+			// check whether the context has expired (timeout)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
 			}
 
-			fmt.Printf("%sChecking remote: %s (Host: %s)%s\n", output.ColBlue, u, hostname, output.ColReset)
-		}
+			var hostname string
+			var checkResult checker.CertInfo
 
-		results[i] = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+			if inputType == TypeFile {
+				hostname = ""
+
+				checkResult = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+			} else {
+				hostname = checker.ExtractHostname(u)
+
+				if hostname == "" {
+					checkResult = checker.CertInfo{URL: u, Status: "ERROR", Error: fmt.Errorf("empty hostname")}
+					results[i] = checkResult
+					return nil
+				}
+
+				// timeout of 5s is per request
+				checkResult = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+			}
+
+			// Ergebnis an der korrekten Position speichern
+			results[i] = checkResult
+			return nil
+		})
+	}
+
+	// wait until all goroutines are finished
+	if err := g.Wait(); err != nil {
+		fmt.Printf("%sBatch processing interrupted: %v%s\n", output.ColRed, err, output.ColReset)
+		// even if a timeout occurred, show the previous results
 	}
 
 	// print results
@@ -149,7 +186,7 @@ func main() {
 	// config path/file and filename format
 	configDir := config.ConfigDir
 	filename := filepath.Join(homeDir, configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
-	
+
 	// directory exists before writing?
 	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
 		fmt.Printf("%sError creating directory: %v%s\n", output.ColRed, err, output.ColReset)
