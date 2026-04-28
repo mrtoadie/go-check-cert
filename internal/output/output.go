@@ -1,4 +1,5 @@
 // internal/output/output.go
+// last modification: Apr 28 2026
 package output
 
 import (

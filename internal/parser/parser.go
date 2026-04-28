@@ -1,4 +1,5 @@
 // internal/parser/parser.go
+// last modification: Apr 28 2026
 package parser
 
 import (

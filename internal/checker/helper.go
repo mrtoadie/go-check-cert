@@ -1,4 +1,5 @@
 // internal/checker/helper.go
+// last modification: Apr 26 2026
 package checker
 
 import (
