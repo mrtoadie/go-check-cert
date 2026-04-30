@@ -6,7 +6,7 @@
 - checks the validity of website certificates
 - either a single URL or a (batch) list of URLs from a file
 - checks local certificate files
-- saves the certificate metaindata as a JSON file
+- saves the certificate metadata as a JSON file
 
 ## Install
 ### Arch Linux
