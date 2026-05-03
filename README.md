@@ -1,5 +1,7 @@
 ![assets/header.png](assets/header.png)
-Stay secure, stay informed
+
+*Stay secure, stay informed*
+
 ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) ![GitHub License](https://img.shields.io/github/license/mrtoadie/go-check-cert) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mrtoadie/go-check-cert/total) ![GitHub Release](https://img.shields.io/github/v/release/mrtoadie/go-check-cert)
 
 ## Features
@@ -72,6 +74,7 @@ Text Output (Default)
 === SUMMARY ===
 OK: 0 | Warn: 2 | Exp: 0 | Err: 0
 ```
+
 JSON Output 
 ```json
 {
@@ -92,19 +95,23 @@ JSON Output
 
 ## Cron Job Management
 Interactive Menu
+
 ```bash
 ./cert-checker -cron
 ```
+
 Options:
 
-Set up cron job – Create a new automated check
-List & manage jobs – View/delete existing jobs
-Exit – Quit the program
+1. Set up cron job – Create a new automated check
+2. List & manage jobs – View/delete existing jobs
+3. Exit – Quit the program
+
 List Cron Jobs
 
 ```bash
 ./cert-checker -list
 ``
+
 Output:
 ```bash
 === CERTIFICATE CHECK CRON JOBS ===
@@ -117,11 +124,12 @@ Output:
 
 Total: 2 job(s) found.
 ```
+
 #### Delete Individual Jobs
-Run ./cert-checker -list
-Select "Delete individual jobs"
-Mark jobs with Spacebar
-Confirm with Enter
+- Run ./cert-checker -list
+- Select "Delete individual jobs"
+- Mark jobs with Spacebar
+- Confirm with Enter
 
 ## Usage
 The input is interactive and automatically detects the correct format.
