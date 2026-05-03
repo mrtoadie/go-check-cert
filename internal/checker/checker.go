@@ -71,7 +71,7 @@ func checkRemoteCert(target string, hostname string, timeout time.Duration) Cert
 
 	// establish TLS connection
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: timeout}, "tcp", url, &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false, // better false (https://cwe.mitre.org/data/definitions/295.html)
 		ServerName:         hostname,
 	})
 	if err != nil {
