@@ -9,17 +9,53 @@
 - saves the certificate metadata as a JSON file
 
 ## Install
+### Build from source
+```bash
+git clone https://github.com/mrtoadie/go-check-cert.git
+cd go-check-cert
+go build -o cert-checker
+```
+### Run directly (without build)
+```bash
+go run .
+```
 ### Arch Linux
 Install from [AUR](https://aur.archlinux.org/packages/cert-checker)
 ```bash
 yay -S cert-checker
 ```
 
-## Usage
-Run
+## Command Line Options
+| Flag | Description |
+| -f	-file	| Path to a local .pem, .crt, .cer, or .key file |
+| -c	-cron |	Interactive Cron setup |
+| -list	-ls |	List and manage Cron jobs |
+| -ci	-ci-mode | CI/CD Mode (non-interactive, uses urls.txt) |
+|-h	-help |	Display help message |
+
+## Examples
+Check a single certificate:
 ```bash
-cert-checker
+./cert-checker -f ./server.crt
 ```
+
+Set up cron job(s):
+```bash
+./cert-checker -c
+```
+List active Cron jobs:
+```bash
+./cert-checker -ls
+```
+## Configuration
+The tool automatically creates a configuration file on the first run.
+
+Location: `~/.config/cert-checker/urls.txt`
+
+Format: One URL per line. Comments starting with # are supported.
+
+
+## Usage
 The input is interactive and automatically detects the correct format.
 
 - Press **Enter** to use the default list of URLs (~/.config/cert-checker/urls.txt)
