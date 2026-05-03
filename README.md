@@ -26,7 +26,9 @@ yay -S cert-checker
 ```
 
 ## Command Line Options
+
 | Flag | Description |
+| --- | --- |
 | -f	-file	| Path to a local .pem, .crt, .cer, or .key file |
 | -c	-cron |	Interactive Cron setup |
 | -list	-ls |	List and manage Cron jobs |
