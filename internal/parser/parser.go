@@ -14,7 +14,7 @@ import (
 func ParseInput(input string) ([]string, error) {
 	input = strings.TrimSpace(input)
 	if input == "" {
-		// Default behavior: Try to read urls.txt
+		// try to read urls.txt
 		input = "urls.txt"
 	}
 

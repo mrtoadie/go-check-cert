@@ -1,9 +1,9 @@
-// Version 1.1.0
+// Version 1.1.2
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: Apr 28 2026
+// last modification: May 03 2026
 package main
 
 import (
@@ -19,6 +19,7 @@ import (
 	"cert-checker/internal/config"
 	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
+	"cert-checker/internal/schedule"
 
 	"github.com/charmbracelet/huh"
 	"golang.org/x/sync/errgroup"
@@ -31,11 +32,64 @@ const (
 	TypeFile
 	TypeURL
 	TypeMixed
+	Version = "1.1.2"
 )
 
 func main() {
 	localFile := flag.String("file", "", "Path to a local .pem/.crt file")
+	flag.StringVar(localFile, "f", "", "Path to a local .pem/.crt file (alias)")
+
+	intitSchedule := flag.Bool("c", false, "Cron-Setup")
+	flag.BoolVar(intitSchedule, "cron", false, "Cron-Setup (alias)")
+
+	ciMode := flag.Bool("ci", false, "CI/CD Mode: Non-interactive, uses urls.txt automatically")
+	flag.BoolVar(ciMode, "ci-mode", false, "CI/CD Mode (alias)")
+
+	listFlag := flag.Bool("list", false, "Show all cron jobs with 'cert-checker'")
+	flag.BoolVar(listFlag, "ls", false, "Show cron jobs (alias)")
+
+	showHelp := flag.Bool("h", false, "Show help")
+
 	flag.Parse()
+
+	if *intitSchedule {
+		schedule.ScheduleMain()
+		os.Exit(0)
+	}
+
+	if *ciMode {
+		runCIMode()
+		os.Exit(0)
+	}
+
+	if *listFlag {
+		schedule.ListAndManageJobs()
+		os.Exit(0)
+	}
+
+	if *showHelp {
+		fmt.Fprintf(os.Stderr, "cert-checker v%s\n\n", Version)
+
+		// short description
+		fmt.Fprintln(os.Stderr, "Usage: cert-checker [options]")
+		fmt.Fprintln(os.Stderr, "\nOptions:")
+
+		fmt.Fprintln(os.Stderr, "  -c, -cron")
+		fmt.Fprintln(os.Stderr, "        Setup cron jobs")
+
+		fmt.Fprintln(os.Stderr, "  -ls, -list")
+		fmt.Fprintln(os.Stderr, "        Show / remove cron jobs")
+
+		fmt.Fprintln(os.Stderr, "  -ci, -ci-mode")
+		fmt.Fprintln(os.Stderr, "        CI/CD Mode: Non-interactive, uses urls.txt automatically")
+
+		fmt.Fprintln(os.Stderr, "  -f, -file string")
+		fmt.Fprintln(os.Stderr, "        Path to a local .pem/.crt file")
+
+		fmt.Fprintln(os.Stderr, "  -h, -help")
+		fmt.Fprintln(os.Stderr, "        Show this help message")
+		os.Exit(0)
+	}
 
 	var urls []string
 	var inputType InputType
@@ -62,7 +116,7 @@ func main() {
 		err = huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
-					Title("=== SSL CHECKER ===").
+					Title("=== CERT-CHECKER ===").
 					Description("Enter URLs, Filename, or press Enter for defaults").
 					Value(&input),
 			).WithTheme(huh.ThemeBase16()),
@@ -134,18 +188,15 @@ func main() {
 				checkResult = checker.CheckCertExpiry(u, hostname, 5*time.Second)
 			} else {
 				hostname = checker.ExtractHostname(u)
-
 				if hostname == "" {
 					checkResult = checker.CertInfo{URL: u, Status: "ERROR", Error: fmt.Errorf("empty hostname")}
 					results[i] = checkResult
 					return nil
 				}
-
 				// timeout of 5s is per request
 				checkResult = checker.CheckCertExpiry(u, hostname, 5*time.Second)
 			}
-
-			// Ergebnis an der korrekten Position speichern
+			// save result in the correct position
 			results[i] = checkResult
 			return nil
 		})
@@ -199,4 +250,58 @@ func main() {
 	}
 
 	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
+}
+
+// NEUE FUNKTION: CI Mode
+func runCIMode() {
+	// 1. URLs aus Config-Datei laden
+	urls, _, err := config.InitConfig()
+	if err != nil {
+		fmt.Printf("%sKonfigurationsfehler: %v%s\n", output.ColRed, err, output.ColReset)
+		os.Exit(1)
+	}
+
+	if len(urls) == 0 {
+		fmt.Printf("%sKeine URLs in der Konfigurationsdatei gefunden.%s\n", output.ColYellow, output.ColReset)
+		os.Exit(1)
+	}
+
+	fmt.Printf("%sPrüfe %d URLs aus urls.txt...%s\n\n", output.ColBlue, len(urls), output.ColReset)
+
+	// 2. URLs prüfen (parallele Logik aus main.go übernehmen)
+	results := make([]checker.CertInfo, len(urls))
+	for i, u := range urls {
+		hostname := checker.ExtractHostname(u)
+		if hostname == "" {
+			results[i] = checker.CertInfo{URL: u, Status: "ERROR", Error: fmt.Errorf("empty hostname")}
+			continue
+		}
+		results[i] = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+	}
+
+	// 3. Ergebnisse ausgeben (OHNE interaktive Abfrage)
+	output.PrintResults(results)
+
+	// 4. JSON automatisch speichern (optional, ohne Abfrage)
+	homeDir, _ := os.UserHomeDir()
+	configDir := config.ConfigDir
+	filename := filepath.Join(homeDir, configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
+
+	if err := output.ExportJSON(results, filename); err != nil {
+		fmt.Printf("%sFehler beim Speichern: %v%s\n", output.ColRed, err, output.ColReset)
+	} else {
+		fmt.Printf("\n%sErgebnisse gespeichert: %s%s\n", output.ColGreen, filename, output.ColReset)
+	}
+
+	// 5. Exit Code basierend auf Ergebnissen
+	exitCode := 0
+	for _, r := range results {
+		if r.Status == "EXPIRED" || r.Status == "ERROR" {
+			exitCode = 2
+			break
+		} else if r.Status == "WARNING" || r.Status == "SOON" {
+			exitCode = 1
+		}
+	}
+	os.Exit(exitCode)
 }
