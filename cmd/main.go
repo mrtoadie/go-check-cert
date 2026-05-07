@@ -1,9 +1,9 @@
-// Version 1.1.2
+// Version 1.1.3
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: May 03 2026
+// last modification: May 07 2026
 package main
 
 import (
@@ -32,27 +32,60 @@ const (
 	TypeFile
 	TypeURL
 	TypeMixed
-	Version = "1.1.2"
+	Version = "1.1.3"
 )
 
 func main() {
+	// define flag map
+	validFlags := map[string]bool{
+		"-file": true, "-f": true,
+		"-cron": true, "-c": true,
+		"-ci-mode": true, "-ci": true,
+		"-list": true, "-ls": true,
+		"-log": true, "-l": true,
+		"-help": true, "-h": true,
+	}
+	// pre-validation of arguments
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") {
+			if !validFlags[arg] {
+				fmt.Println(output.ColRed, "Error: flag provided but not defined: ", arg, output.ColReset)
+				fmt.Println(output.ColYellow, "Hint: Use -h or --help for usage information.", output.ColReset)
+				os.Exit(0)
+			}
+		}
+	}
+
+	// define flags
 	localFile := flag.String("file", "", "Path to a local .pem/.crt file")
-	flag.StringVar(localFile, "f", "", "Path to a local .pem/.crt file (alias)")
-
-	intitSchedule := flag.Bool("c", false, "Cron-Setup")
-	flag.BoolVar(intitSchedule, "cron", false, "Cron-Setup (alias)")
-
-	ciMode := flag.Bool("ci", false, "CI/CD Mode: Non-interactive, uses urls.txt automatically")
-	flag.BoolVar(ciMode, "ci-mode", false, "CI/CD Mode (alias)")
-
+	initSchedule := flag.Bool("cron", false, "Create & manage cron jobs")
+	ciMode := flag.Bool("ci-mode", false, "CI/CD Mode: Non-interactive, uses urls.txt automatically")
 	listFlag := flag.Bool("list", false, "Show all cron jobs with 'cert-checker'")
-	flag.BoolVar(listFlag, "ls", false, "Show cron jobs (alias)")
+	logs := flag.Bool("log", false, "Show cron job log file")
+	showHelp := flag.Bool("help", false, "Show help")
 
-	showHelp := flag.Bool("h", false, "Show help")
+	// aliase
+	flag.StringVar(localFile, "f", "", "Alias for --file")
+	flag.BoolVar(initSchedule, "c", false, "Alias for --cron")
+	flag.BoolVar(ciMode, "ci", false, "Alias for --ci-mode")
+	flag.BoolVar(listFlag, "ls", false, "Alias for --list")
+	flag.BoolVar(logs, "l", false, "Alias for --logs")
+	flag.BoolVar(showHelp, "h", false, "Alias for --help")
 
+	// usage func
+	flag.Usage = func() {
+		fmt.Print(output.ColRed)
+		fmt.Println(output.ColYellow, "\nUse -h or --help for usage information.", output.ColReset)
+
+		fmt.Println(output.ColGreen, "\nExamples:", output.ColReset)
+		fmt.Println("  cert-checker -file cert.pem")
+		fmt.Println("  cert-checker -cron")
+		fmt.Println("  cert-checker -ci-mode")
+		os.Exit(0)
+	}
 	flag.Parse()
 
-	if *intitSchedule {
+	if *initSchedule {
 		schedule.ScheduleMain()
 		os.Exit(0)
 	}
@@ -67,27 +100,39 @@ func main() {
 		os.Exit(0)
 	}
 
+	if *logs {
+		schedule.ViewLogs()
+		os.Exit(0)
+	}
+
 	if *showHelp {
-		fmt.Fprintf(os.Stderr, "cert-checker v%s\n\n", Version)
+		fmt.Println(output.ColBlue, "\ncert-checker "+Version, output.ColReset)
 
-		// short description
-		fmt.Fprintln(os.Stderr, "Usage: cert-checker [options]")
-		fmt.Fprintln(os.Stderr, "\nOptions:")
+		fmt.Println(output.ColYellow, "\n Usage: cert-checker [options]", output.ColReset)
+		fmt.Println(output.ColBlue, "\n Options:", output.ColReset)
 
-		fmt.Fprintln(os.Stderr, "  -c, -cron")
-		fmt.Fprintln(os.Stderr, "        Setup cron jobs")
+		fmt.Println(output.ColYellow, " -c, -cron", output.ColReset)
+		fmt.Println(output.ColBlue, "         Create & manage cron jobs", output.ColReset)
 
-		fmt.Fprintln(os.Stderr, "  -ls, -list")
-		fmt.Fprintln(os.Stderr, "        Show / remove cron jobs")
+		fmt.Println(output.ColYellow, " -ls, -list", output.ColReset)
+		fmt.Println(output.ColBlue, "         Show / remove cron jobs", output.ColReset)
 
-		fmt.Fprintln(os.Stderr, "  -ci, -ci-mode")
-		fmt.Fprintln(os.Stderr, "        CI/CD Mode: Non-interactive, uses urls.txt automatically")
+		fmt.Println(output.ColYellow, " -log, -logs", output.ColReset)
+		fmt.Println(output.ColBlue, "         Show cron job log file", output.ColReset)
 
-		fmt.Fprintln(os.Stderr, "  -f, -file string")
-		fmt.Fprintln(os.Stderr, "        Path to a local .pem/.crt file")
+		fmt.Println(output.ColYellow, " -ci, -ci-mode", output.ColReset)
+		fmt.Println(output.ColBlue, "         CI/CD Mode: Non-interactive, uses urls.txt automatically", output.ColReset)
 
-		fmt.Fprintln(os.Stderr, "  -h, -help")
-		fmt.Fprintln(os.Stderr, "        Show this help message")
+		fmt.Println(output.ColYellow, " -f, -file string", output.ColReset)
+		fmt.Println(output.ColBlue, "         Path to a local .pem/.crt file", output.ColReset)
+
+		fmt.Println(output.ColYellow, " -h, -help", output.ColReset)
+		fmt.Println(output.ColBlue, "         Show this help message", output.ColReset)
+
+		fmt.Println(output.ColGreen, "\nExamples:", output.ColReset)
+		fmt.Println("  cert-checker -file cert.pem")
+		fmt.Println("  cert-checker -cron")
+		fmt.Println("  cert-checker -ci-mode")
 		os.Exit(0)
 	}
 
@@ -252,23 +297,22 @@ func main() {
 	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
 }
 
-// NEUE FUNKTION: CI Mode
 func runCIMode() {
-	// 1. URLs aus Config-Datei laden
+	// load URLs from config file
 	urls, _, err := config.InitConfig()
 	if err != nil {
-		fmt.Printf("%sKonfigurationsfehler: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sConfiguration error: %v%s\n", output.ColRed, err, output.ColReset)
 		os.Exit(1)
 	}
 
 	if len(urls) == 0 {
-		fmt.Printf("%sKeine URLs in der Konfigurationsdatei gefunden.%s\n", output.ColYellow, output.ColReset)
+		fmt.Printf("%sNo URLs found in configuration file.%s\n", output.ColYellow, output.ColReset)
 		os.Exit(1)
 	}
 
-	fmt.Printf("%sPrüfe %d URLs aus urls.txt...%s\n\n", output.ColBlue, len(urls), output.ColReset)
+	fmt.Printf("%sCheck %d URLs from urls.txt...%s\n\n", output.ColBlue, len(urls), output.ColReset)
 
-	// 2. URLs prüfen (parallele Logik aus main.go übernehmen)
+	// check URLs
 	results := make([]checker.CertInfo, len(urls))
 	for i, u := range urls {
 		hostname := checker.ExtractHostname(u)
@@ -279,21 +323,21 @@ func runCIMode() {
 		results[i] = checker.CheckCertExpiry(u, hostname, 5*time.Second)
 	}
 
-	// 3. Ergebnisse ausgeben (OHNE interaktive Abfrage)
+	// output results (WITHOUT interactive query)
 	output.PrintResults(results)
 
-	// 4. JSON automatisch speichern (optional, ohne Abfrage)
+	// save JSON
 	homeDir, _ := os.UserHomeDir()
 	configDir := config.ConfigDir
 	filename := filepath.Join(homeDir, configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
 
 	if err := output.ExportJSON(results, filename); err != nil {
-		fmt.Printf("%sFehler beim Speichern: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
 	} else {
-		fmt.Printf("\n%sErgebnisse gespeichert: %s%s\n", output.ColGreen, filename, output.ColReset)
+		fmt.Printf("\n%sResults saved: %s%s\n", output.ColGreen, filename, output.ColReset)
 	}
 
-	// 5. Exit Code basierend auf Ergebnissen
+	// exit code based on results
 	exitCode := 0
 	for _, r := range results {
 		if r.Status == "EXPIRED" || r.Status == "ERROR" {

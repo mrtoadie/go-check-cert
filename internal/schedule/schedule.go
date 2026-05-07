@@ -33,6 +33,7 @@ type CronJob struct {
 
 // Schedule launches the interactive menu for cron job setup
 func ScheduleMain() {
+
 	var action string
 
 	fmt.Printf("%s=== CRON JOB SETUP ===%s\n", output.ColBlue, output.ColReset)
@@ -65,7 +66,9 @@ func ScheduleMain() {
 		ListAndManageJobs()
 	case "exit":
 		fmt.Println("Bye...")
+		return
 	}
+
 }
 
 // create cron jobs
@@ -96,7 +99,6 @@ func CreateCron() {
 					return nil
 				}).
 				Value(&minute),
-
 			// hour of the day
 			huh.NewInput().
 				Title("Hour").
@@ -121,7 +123,6 @@ func CreateCron() {
 				}).
 				Value(&hour),
 		).WithTheme(huh.ThemeBase16()),
-
 		// day of the month (1-31)
 		huh.NewGroup(
 			huh.NewInput().
@@ -144,7 +145,6 @@ func CreateCron() {
 					return nil
 				}).
 				Value(&dayOfMonth),
-
 			// month (1-12) or "*" for each month
 			huh.NewSelect[string]().
 				Title("Month").
@@ -166,7 +166,6 @@ func CreateCron() {
 				).
 				Value(&month),
 		).WithTheme(huh.ThemeBase16()),
-
 		// day of the week (0-6, 0=Sunday) or "*" for every day
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -184,7 +183,6 @@ func CreateCron() {
 				).
 				Value(&dayOfWeek),
 		).WithTheme(huh.ThemeBase16()),
-
 		// confirm
 		huh.NewGroup(
 			huh.NewConfirm().
@@ -354,7 +352,6 @@ func ListAndManageJobs() {
 
 	if action == "back" {
 		fmt.Println("Back to main menu...")
-		return
 	}
 
 	if action == "delete" {
@@ -484,4 +481,29 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
+}
+
+// ViewLogs zeigt Logs durch einen Pager
+func ViewLogs() {
+	logFile := "/tmp/cert-check.log"
+
+	// Prüfen, ob Datei existiert
+	if _, err := os.Stat(logFile); os.IsNotExist(err) {
+		fmt.Printf("%sNo log file found yet.%s\n", output.ColYellow, output.ColReset)
+		fmt.Println("Logs are created when a Cron job runs.")
+		fmt.Println("\nPress Enter to continue...")
+		fmt.Scanln()
+		return
+	}
+
+	// Starte 'less' als Pager
+	cmd := exec.Command("less", "-R", logFile)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("%sError opening pager: %v%s\n", output.ColRed, err, output.ColReset)
+	}
+
 }

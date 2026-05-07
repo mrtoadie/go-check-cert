@@ -101,7 +101,7 @@ func PrintResults(results []checker.CertInfo) {
 		}
 
 		if !r.IsChainComplete && r.ChainError != "" {
-			fmt.Printf("   %sFehler: %s%s\n", ColRed, r.ChainError, ColReset)
+			fmt.Printf("   %sError: %s%s\n", ColRed, r.ChainError, ColReset)
 		}
 
 		if r.RootIssuer != "" {
