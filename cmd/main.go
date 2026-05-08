@@ -273,7 +273,7 @@ func main() {
 	}
 
 	// determine home dir if not exit
-	homeDir, _ := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Printf("%sError: Could not determine home directory: %v%s\n", output.ColRed, err, output.ColReset)
 		os.Exit(1)
