@@ -10,17 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"cert-checker/internal/config"
+	"cert-checker/internal/constants"
 	"cert-checker/internal/output"
 
 	"github.com/charmbracelet/huh"
-)
-
-var (
-	minute     string = "0"
-	hour       string
-	dayOfMonth string = "*"
-	month      string = "*"
-	dayOfWeek  string = "*"
 )
 
 // cron job entry with comment and command
@@ -73,8 +67,15 @@ func ScheduleMain() {
 
 // create cron jobs
 func CreateCron() {
-	var cronExpression string
-	var confirm bool
+	var (
+		minute         string = "0"
+		hour           string
+		dayOfMonth     string = "*"
+		month          string = "*"
+		dayOfWeek      string = "*"
+		cronExpression string
+		confirm        bool
+	)
 
 	fmt.Printf("%s=== CREATE CRON JOB ===%s\n\n", output.ColBlue, output.ColReset)
 	// create cron
@@ -230,9 +231,13 @@ func getBinaryPath() (string, error) {
 }
 
 func installCronJob(binaryPath, cronExpression string) error {
-	comment := fmt.Sprintf("# cert-checker - %s", time.Now().Format("2006-01-02 15:04:05"))
+	logFile, err := config.GetLogPath()
+	if err != nil {
+		return fmt.Errorf("could not determine log path: %w", err)
+	}
 
-	cronEntry := fmt.Sprintf("%s %s -ci >> /tmp/cert-check.log 2>&1", cronExpression, binaryPath)
+	comment := fmt.Sprintf("# cert-checker - %s", time.Now().Format(constants.CronDateFormat))
+	cronEntry := fmt.Sprintf("%s %s -ci >> %s 2>&1", cronExpression, binaryPath, logFile)
 
 	// get current crontab
 	cmd := exec.Command("crontab", "-l")
@@ -267,8 +272,7 @@ func installCronJob(binaryPath, cronExpression string) error {
 	fmt.Printf("\n%sCron job created successfully!%s\n", output.ColGreen, output.ColReset)
 	fmt.Printf("Cron-Expression: %s\n", cronExpression)
 	fmt.Printf("command: %s\n", cronEntry)
-	fmt.Print("TEST: ", comment)
-	fmt.Printf("Log: %stail -f /tmp/cert-check.log%s\n", output.ColBlue, output.ColReset)
+	fmt.Print(output.ColYellow, "Log: ./cert-checker -log OR tail -f "+constants.ConfigDir+"/"+constants.LogFileName+"\n", output.ColReset)
 	return nil
 }
 
@@ -286,16 +290,12 @@ func ListAndManageJobs() {
 
 	lines := strings.Split(string(out), "\n")
 	jobs := []CronJob{}
-	jobCount := 0
 
 	// collect jobs
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
-
 		// search for the comment
-		if strings.Contains(line, "# cert-checker") {
-			jobCount++
-
+		if strings.Contains(line, constants.CronMarker) {
 			// search for the command
 			var command string
 			if i+1 < len(lines) {
@@ -303,7 +303,6 @@ func ListAndManageJobs() {
 			} else {
 				command = "(Command not found)"
 			}
-
 			// save job
 			jobs = append(jobs, CronJob{
 				Comment:   line,
@@ -311,7 +310,6 @@ func ListAndManageJobs() {
 				Index:     i,
 				FullEntry: line + "\n" + command,
 			})
-
 			// Increase index to skip command line
 			i++
 		}
@@ -319,7 +317,7 @@ func ListAndManageJobs() {
 
 	if len(jobs) == 0 {
 		fmt.Printf("%sNo cron jobs with 'cert-checker' found.%s\n", output.ColYellow, output.ColReset)
-		fmt.Println("Create one with: ./cert-checker -i")
+		fmt.Println("Create one with: ./cert-checker -cron")
 		return
 	}
 
@@ -360,9 +358,9 @@ func ListAndManageJobs() {
 
 		options := []huh.Option[int]{}
 		for i, job := range jobs {
-			shortDesc := strings.Replace(job.Comment, "# cert-checker - ", "", 1)
+			shortDesc := strings.Replace(job.Comment, constants.CronMarker+" - ", "", 1)
 			options = append(options, huh.NewOption(
-				fmt.Sprintf("%d. %s | %s", i+1, shortDesc, truncate(job.Command, 40)),
+				fmt.Sprintf("%d. %s | %s", i+1, shortDesc, output.TruncateString(job.Command, 40)),
 				i,
 			))
 		}
@@ -438,7 +436,7 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 	jobIndex := 0
 	for i := 0; i < len(entries); i++ {
 		line := entries[i].Line
-		if strings.Contains(line, "# cert-checker") {
+		if strings.Contains(line, constants.CronMarker) {
 			for _, selIdx := range selectedIndices {
 				if selIdx == jobIndex {
 					entries[i].ToDelete = true
@@ -460,7 +458,6 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 	}
 
 	newCrontab := strings.Join(newLines, "\n")
-	newCrontab = strings.TrimRight(newCrontab, "\n")
 	if newCrontab != "" {
 		newCrontab += "\n"
 	}
@@ -475,19 +472,15 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 	return nil
 }
 
-// truncate cuts long strings
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
 // ViewLogs zeigt Logs durch einen Pager
 func ViewLogs() {
-	logFile := "/tmp/cert-check.log"
+	logFile, err := config.GetLogPath()
 
-	// Prüfen, ob Datei existiert
+	if err != nil {
+		fmt.Printf("%sError getting log path: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
+
 	if _, err := os.Stat(logFile); os.IsNotExist(err) {
 		fmt.Printf("%sNo log file found yet.%s\n", output.ColYellow, output.ColReset)
 		fmt.Println("Logs are created when a Cron job runs.")
@@ -505,5 +498,4 @@ func ViewLogs() {
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("%sError opening pager: %v%s\n", output.ColRed, err, output.ColReset)
 	}
-
 }

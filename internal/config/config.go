@@ -1,5 +1,4 @@
 // internal/config/config.go
-// last modification: Apr 28 2026
 package config
 
 import (
@@ -7,14 +6,47 @@ import (
 	"os"
 	"path/filepath"
 
+	"cert-checker/internal/constants"
 	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
 )
 
-const (
-	ConfigDir  = ".config/cert-checker"
-	ConfigFile = "urls.txt"
-)
+// GetConfigPath returns the full path to the configuration file
+func GetConfigPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("could not find home directory: %w", err)
+	}
+	return filepath.Join(homeDir, constants.ConfigDir, constants.ConfigFile), nil
+}
+
+// GetLogPath returns the full path to the log file
+func GetLogPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("could not find home directory: %w", err)
+	}
+
+	logDir := filepath.Join(homeDir, constants.ConfigDir)
+
+	// Make sure the directory exists
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		// If MkdirAll fails, fallback to ~/.config
+		logDir = filepath.Join(homeDir, constants.ConfigDir)
+	}
+
+	return filepath.Join(logDir, constants.LogFileName), nil
+}
+
+// EnsureConfigDir creates the config directory if it does not exist
+func EnsureConfigDir() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	configPath := filepath.Join(homeDir, constants.ConfigDir)
+	return os.MkdirAll(configPath, 0755)
+}
 
 // checks whether the configuration file exists.
 // returns the URLs and a bool (true = file recreated)
@@ -24,8 +56,8 @@ func InitConfig() ([]string, bool, error) {
 		return nil, false, fmt.Errorf("could not find home directory: %w", err)
 	}
 
-	configPath := filepath.Join(homeDir, ConfigDir)
-	configFile := filepath.Join(configPath, ConfigFile)
+	configPath := filepath.Join(homeDir, constants.ConfigDir)
+	configFile := filepath.Join(configPath, constants.ConfigFile)
 
 	// check if file exists
 	if _, err := os.Stat(configFile); err == nil {

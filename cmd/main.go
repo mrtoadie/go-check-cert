@@ -1,9 +1,9 @@
-// Version 1.1.3
+// Version 1.1.5
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: May 07 2026
+// last modification: May 09 2026
 package main
 
 import (
@@ -17,9 +17,11 @@ import (
 
 	"cert-checker/internal/checker"
 	"cert-checker/internal/config"
+	"cert-checker/internal/constants"
 	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
 	"cert-checker/internal/schedule"
+	"cert-checker/internal/web"
 
 	"github.com/charmbracelet/huh"
 	"golang.org/x/sync/errgroup"
@@ -32,8 +34,17 @@ const (
 	TypeFile
 	TypeURL
 	TypeMixed
-	Version = "1.1.3"
+	Version = "1.1.5"
 )
+
+// main.go
+func addStringAlias(flagPtr *string, shortName, longName, usage string) {
+	flag.StringVar(flagPtr, shortName, "", fmt.Sprintf("Alias for --%s", longName))
+}
+
+func addBoolAlias(flagPtr *bool, shortName, longName, usage string) {
+	flag.BoolVar(flagPtr, shortName, false, fmt.Sprintf("Alias for --%s", longName))
+}
 
 func main() {
 	// define flag map
@@ -44,53 +55,57 @@ func main() {
 		"-list": true, "-ls": true,
 		"-log": true, "-l": true,
 		"-help": true, "-h": true,
+		"-web": true, "-w": true,
 	}
 	// pre-validation of arguments
 	for _, arg := range os.Args[1:] {
 		if strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") {
 			if !validFlags[arg] {
-				fmt.Println(output.ColRed, "Error: flag provided but not defined: ", arg, output.ColReset)
-				fmt.Println(output.ColYellow, "Hint: Use -h or --help for usage information.", output.ColReset)
-				os.Exit(0)
+				fmt.Println(output.ColRed, "Error: flag provided but not defined:", arg, output.ColReset)
+				fmt.Println(output.ColYellow, "Hint: Use -h or -help for usage information.", output.ColReset)
+				os.Exit(2)
 			}
 		}
 	}
 
-	// define flags
-	localFile := flag.String("file", "", "Path to a local .pem/.crt file")
-	initSchedule := flag.Bool("cron", false, "Create & manage cron jobs")
-	ciMode := flag.Bool("ci-mode", false, "CI/CD Mode: Non-interactive, uses urls.txt automatically")
-	listFlag := flag.Bool("list", false, "Show all cron jobs with 'cert-checker'")
-	logs := flag.Bool("log", false, "Show cron job log file")
-	showHelp := flag.Bool("help", false, "Show help")
+	// define flags & aliase
+	fileFlag := flag.String("file", "", "Path to a local .pem/.crt file")
+	addStringAlias(fileFlag, "f", "file", "Path to a local .pem/.crt file")
 
-	// aliase
-	flag.StringVar(localFile, "f", "", "Alias for --file")
-	flag.BoolVar(initSchedule, "c", false, "Alias for --cron")
-	flag.BoolVar(ciMode, "ci", false, "Alias for --ci-mode")
-	flag.BoolVar(listFlag, "ls", false, "Alias for --list")
-	flag.BoolVar(logs, "l", false, "Alias for --logs")
-	flag.BoolVar(showHelp, "h", false, "Alias for --help")
+	cronFlag := flag.Bool("cron", false, "Create & manage cron jobs")
+	addBoolAlias(cronFlag, "c", "cron", "Create & manage cron jobs")
+
+	ciModeFlag := flag.Bool("ci-mode", false, "CI/CD Mode: Non-interactive, uses urls.txt automatically")
+	addBoolAlias(ciModeFlag, "ci", "ci-mode", "CI/CD Mode: Non-interactive, uses urls.txt automatically")
+
+	listFlag := flag.Bool("list", false, "Show all cron jobs with 'cert-checker'")
+	addBoolAlias(listFlag, "ls", "list", "Show all cron jobs with 'cert-checker'")
+
+	logFlag := flag.Bool("log", false, "Show cron job log file")
+	addBoolAlias(logFlag, "l", "log", "Show cron job log file")
+
+	helpFlag := flag.Bool("help", false, "Show help")
+	addBoolAlias(helpFlag, "h", "help", "Show help")
+
+	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:8080")
+	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:8080")
 
 	// usage func
 	flag.Usage = func() {
-		fmt.Print(output.ColRed)
-		fmt.Println(output.ColYellow, "\nUse -h or --help for usage information.", output.ColReset)
-
-		fmt.Println(output.ColGreen, "\nExamples:", output.ColReset)
+		fmt.Println(output.ColGreen, "\n Examples:", output.ColReset)
 		fmt.Println("  cert-checker -file cert.pem")
 		fmt.Println("  cert-checker -cron")
-		fmt.Println("  cert-checker -ci-mode")
+		fmt.Println("  cert-checker -log")
 		os.Exit(0)
 	}
 	flag.Parse()
 
-	if *initSchedule {
+	if *cronFlag {
 		schedule.ScheduleMain()
 		os.Exit(0)
 	}
 
-	if *ciMode {
+	if *ciModeFlag {
 		runCIMode()
 		os.Exit(0)
 	}
@@ -100,16 +115,24 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *logs {
+	if *logFlag {
 		schedule.ViewLogs()
 		os.Exit(0)
 	}
 
-	if *showHelp {
+	if *webFlag {
+		web.StartServer("8080")
+
+	}
+
+	if *helpFlag {
 		fmt.Println(output.ColBlue, "\ncert-checker "+Version, output.ColReset)
 
 		fmt.Println(output.ColYellow, "\n Usage: cert-checker [options]", output.ColReset)
 		fmt.Println(output.ColBlue, "\n Options:", output.ColReset)
+
+		fmt.Println(output.ColYellow, " -f, -file string", output.ColReset)
+		fmt.Println(output.ColBlue, "         Path to a local .pem/.crt file", output.ColReset)
 
 		fmt.Println(output.ColYellow, " -c, -cron", output.ColReset)
 		fmt.Println(output.ColBlue, "         Create & manage cron jobs", output.ColReset)
@@ -117,22 +140,16 @@ func main() {
 		fmt.Println(output.ColYellow, " -ls, -list", output.ColReset)
 		fmt.Println(output.ColBlue, "         Show / remove cron jobs", output.ColReset)
 
-		fmt.Println(output.ColYellow, " -log, -logs", output.ColReset)
+		fmt.Println(output.ColYellow, " -l, -log", output.ColReset)
 		fmt.Println(output.ColBlue, "         Show cron job log file", output.ColReset)
 
 		fmt.Println(output.ColYellow, " -ci, -ci-mode", output.ColReset)
 		fmt.Println(output.ColBlue, "         CI/CD Mode: Non-interactive, uses urls.txt automatically", output.ColReset)
 
-		fmt.Println(output.ColYellow, " -f, -file string", output.ColReset)
-		fmt.Println(output.ColBlue, "         Path to a local .pem/.crt file", output.ColReset)
-
 		fmt.Println(output.ColYellow, " -h, -help", output.ColReset)
 		fmt.Println(output.ColBlue, "         Show this help message", output.ColReset)
 
-		fmt.Println(output.ColGreen, "\nExamples:", output.ColReset)
-		fmt.Println("  cert-checker -file cert.pem")
-		fmt.Println("  cert-checker -cron")
-		fmt.Println("  cert-checker -ci-mode")
+		flag.Usage()
 		os.Exit(0)
 	}
 
@@ -140,14 +157,14 @@ func main() {
 	var inputType InputType
 	var err error
 
-	// get input
-	if *localFile != "" {
-		// flag mode: explicit file
-		if _, err := os.Stat(*localFile); os.IsNotExist(err) {
-			fmt.Printf("%sError: File not found: %s%s\n", output.ColRed, *localFile, output.ColReset)
+	// get local file input
+	if *fileFlag != "" {
+		// flag mode explicit file
+		if _, err := os.Stat(*fileFlag); os.IsNotExist(err) {
+			fmt.Printf("%sError: File not found: %s%s\n", output.ColRed, *fileFlag, output.ColReset)
 			os.Exit(1)
 		}
-		urls = []string{*localFile}
+		urls = []string{*fileFlag}
 		inputType = TypeFile
 	} else {
 		// interactive mode
@@ -156,7 +173,7 @@ func main() {
 			fmt.Printf("%sConfiguration error: %v%s\n", output.ColRed, err, output.ColReset)
 			os.Exit(1)
 		}
-
+		// huh input form
 		var input string
 		err = huh.NewForm(
 			huh.NewGroup(
@@ -187,7 +204,7 @@ func main() {
 			}
 
 			// determine type based on the first item using centralized logic
-			if checker.IsFilePath(urls[0]) && (strings.HasSuffix(urls[0], ".pem") || strings.HasSuffix(urls[0], ".crt") || strings.HasSuffix(urls[0], ".cer") || strings.HasSuffix(urls[0], ".key")) {
+			if checker.IsCertFile(urls[0]) {
 				inputType = TypeFile
 				fmt.Printf("%sDetected: Local certificate file%s\n\n", output.ColBlue, output.ColReset)
 			} else {
@@ -246,13 +263,11 @@ func main() {
 			return nil
 		})
 	}
-
 	// wait until all goroutines are finished
 	if err := g.Wait(); err != nil {
 		fmt.Printf("%sBatch processing interrupted: %v%s\n", output.ColRed, err, output.ColReset)
 		// even if a timeout occurred, show the previous results
 	}
-
 	// print results
 	output.PrintResults(results)
 
@@ -272,29 +287,10 @@ func main() {
 		return
 	}
 
-	// determine home dir if not exit
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Printf("%sError: Could not determine home directory: %v%s\n", output.ColRed, err, output.ColReset)
-		os.Exit(1)
-	}
-
-	// config path/file and filename format
-	configDir := config.ConfigDir
-	filename := filepath.Join(homeDir, configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
-
-	// directory exists before writing?
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
-		fmt.Printf("%sError creating directory: %v%s\n", output.ColRed, err, output.ColReset)
-		return
-	}
-
-	if err := output.ExportJSON(results, filename); err != nil {
+	if err := saveReport(results); err != nil {
 		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
 		return
 	}
-
-	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
 }
 
 func runCIMode() {
@@ -327,25 +323,56 @@ func runCIMode() {
 	output.PrintResults(results)
 
 	// save JSON
-	homeDir, _ := os.UserHomeDir()
-	configDir := config.ConfigDir
-	filename := filepath.Join(homeDir, configDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
-
-	if err := output.ExportJSON(results, filename); err != nil {
+	if err := saveReport(results); err != nil {
 		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
-	} else {
-		fmt.Printf("\n%sResults saved: %s%s\n", output.ColGreen, filename, output.ColReset)
+		os.Exit(3) // exit code 3 for storage/save error
 	}
 
 	// exit code based on results
-	exitCode := 0
-	for _, r := range results {
-		if r.Status == "EXPIRED" || r.Status == "ERROR" {
-			exitCode = 2
-			break
-		} else if r.Status == "WARNING" || r.Status == "SOON" {
-			exitCode = 1
-		}
+	os.Exit(checker.CalculateExitCode(results))
+}
+
+// saveReport saves the results as JSON
+/*
+func saveReport(results []checker.CertInfo) error {
+	configPath, err := config.GetConfigPath()
+	if err != nil {
+		return fmt.Errorf("could not determine config path: %w", err)
 	}
-	os.Exit(exitCode)
+
+	reportDir := filepath.Dir(configPath)
+	filename := filepath.Join(reportDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
+
+	if err := os.MkdirAll(reportDir, 0755); err != nil {
+		return fmt.Errorf("could not create directory: %w", err)
+	}
+
+	if err := output.ExportJSON(results, filename); err != nil {
+		return fmt.Errorf("could not save JSON: %w", err)
+	}
+
+	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
+	return nil
+}*/
+
+// saveReport in main.go
+func saveReport(results []checker.CertInfo) error {
+	configPath, err := config.GetConfigPath()
+	if err != nil {
+		return fmt.Errorf("could not determine config path: %w", err)
+	}
+
+	reportDir := filepath.Dir(configPath)
+	filename := filepath.Join(reportDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format(constants.ReportDateFormat)))
+
+	if err := os.MkdirAll(reportDir, 0755); err != nil {
+		return fmt.Errorf("could not create directory: %w", err)
+	}
+
+	if err := output.ExportJSON(results, filename); err != nil {
+		return fmt.Errorf("could not save JSON: %w", err)
+	}
+
+	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
+	return nil
 }

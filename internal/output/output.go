@@ -1,5 +1,4 @@
 // internal/output/output.go
-// last modification: Apr 28 2026
 package output
 
 import (
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"cert-checker/internal/checker"
+	"cert-checker/internal/constants"
 )
 
 const (
@@ -17,9 +17,9 @@ const (
 	ColRed    = "\033[31m"
 	ColGreen  = "\033[32m"
 	ColYellow = "\033[33m"
-	ColBlue   = "\x1b[34m"
+	ColBlue   = "\033[34m"
 )
-
+// NEEDS WORK!!
 // saves the results as JSON
 func ExportJSON(results []checker.CertInfo, filename string) error {
 	if filename == "" {
@@ -40,7 +40,7 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 		TotalCount  int                `json:"total_count"`
 		Results     []checker.CertInfo `json:"results"`
 	}{
-		GeneratedAt: time.Now().Format(time.RFC3339),
+		GeneratedAt: time.Now().Format(constants.RFC3339Format), 
 		TotalCount:  len(results),
 		Results:     results,
 	}
@@ -107,14 +107,12 @@ func PrintResults(results []checker.CertInfo) {
 		if r.RootIssuer != "" {
 			fmt.Printf("   Root Issuer: %s\n", r.RootIssuer)
 		}
-		/////
+
 		fmt.Printf("   Days: %s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
-		// new
-		fmt.Printf("   Serialnumber: %s\n", r.SerialNumber)
-		//fmt.Printf("   Subject: %s\n", r.Subject)
-		//
+		fmt.Printf("   Serial Number: %s\n", r.SerialNumber)
+
 		// key info
 		fmt.Printf("   Key: %s %d-bit | Sig: %s\n",
 			r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
@@ -127,23 +125,35 @@ func PrintResults(results []checker.CertInfo) {
 			}
 			fmt.Printf("   SANs: %s\n", sansStr)
 		}
-		//
+
 		if r.Error != nil {
 			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
 		}
 		fmt.Printf("%s ------------------------------------%s\n", ColBlue, ColReset)
 	}
 
-	// count summary
+	// count statuses
 	counts := map[string]int{}
 	for _, r := range results {
 		counts[r.Status]++
 	}
 
-	fmt.Printf("%s=== SUMMARY ===%s\n", ColBlue, ColReset)
+	// helper for safe count lookup
+	count := func(status string) int {
+		return counts[status]
+	}
+
 	fmt.Printf("%sOK: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
-		ColGreen, counts["OK"], ColReset,
-		ColYellow, counts["SOON"]+counts["WARNING"], ColReset,
-		ColRed, counts["EXPIRED"], ColReset,
-		ColRed, counts["ERROR"], ColReset)
+		ColGreen, count("OK"), ColReset,
+		ColYellow, count("SOON")+count("WARNING"), ColReset,
+		ColRed, count("EXPIRED"), ColReset,
+		ColRed, count("ERROR"), ColReset)
+}
+
+// TruncateString shortens a string and adds "..."
+func TruncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }

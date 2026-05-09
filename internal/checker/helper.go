@@ -1,5 +1,4 @@
 // internal/checker/helper.go
-// last modification: Apr 26 2026
 package checker
 
 import (
@@ -35,23 +34,43 @@ func ExtractHostname(input string) string {
 	return host
 }
 
-// determines if the given string represents a local certificate file
-// 1. known extensions (.pem, .crt, .cer, .key)
-// 2. existence of the file on the local filesystem
-func IsFilePath(input string) bool {
-	if input == "" {
-		return false
-	}
+// determines known extensions (.pem, .crt, .cer, .key)
+func IsCertFile(path string) bool {
+	return strings.HasSuffix(path, ".pem") ||
+		strings.HasSuffix(path, ".crt") ||
+		strings.HasSuffix(path, ".cer") ||
+		strings.HasSuffix(path, ".key")
+}
 
-	// 1. Check known extensions
-	if strings.HasSuffix(input, ".pem") ||
-		strings.HasSuffix(input, ".crt") ||
-		strings.HasSuffix(input, ".cer") ||
-		strings.HasSuffix(input, ".key") {
+// IsFilePath determines existence of the file on the local filesystem
+func IsFilePath(path string) bool {
+	if IsCertFile(path) {
 		return true
 	}
-
-	// 2. check existence (fallback for files without extension or wrong extension)
-	_, err := os.Stat(input)
+	_, err := os.Stat(path)
 	return err == nil
+}
+
+// CalculateExitCode calculates the exit code based on the certificate results
+// rules:
+// -EXPIRED or ERROR: Exit code 2 (critical error)
+// -WARNING or SOON: Exit code 1 (warning)
+// -Everything OK: exit code 0
+func CalculateExitCode(results []CertInfo) int {
+	hasWarning := false
+
+	for _, r := range results {
+		switch r.Status {
+		case "EXPIRED", "ERROR":
+			return 2 // return immediately as this is the highest priority
+		case "WARNING", "SOON":
+			hasWarning = true
+		}
+	}
+
+	if hasWarning {
+		return 1
+	}
+
+	return 0
 }

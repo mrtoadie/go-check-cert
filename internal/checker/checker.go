@@ -1,5 +1,4 @@
 // internal/checker/checker.go
-// last modification: Apr 28 2026
 package checker
 
 import (
@@ -11,6 +10,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -38,10 +38,25 @@ type CertInfo struct {
 	RootIssuer         string
 }
 
+func cleanURL(target string) string {
+	u, err := url.Parse(target)
+	if err != nil {
+		return target // Fallback
+	}
+	if u.Port() == "" {
+		if u.Scheme == "https" {
+			u.Host += ":443"
+		} else {
+			u.Host += ":80"
+		}
+	}
+	return u.Host
+}
+
 // CheckCertExpiry is the public entry point
 // delegates to specialized functions based on whether the target is a local file or a remote URL
 func CheckCertExpiry(target string, hostname string, timeout time.Duration) CertInfo {
-	// Decide: File or Remote?
+	// decide: file or remote?
 	if IsFilePath(target) {
 		return checkLocalFile(target)
 	}
@@ -71,7 +86,7 @@ func checkRemoteCert(target string, hostname string, timeout time.Duration) Cert
 
 	// establish TLS connection
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: timeout}, "tcp", url, &tls.Config{
-		InsecureSkipVerify: false, // better false (https://cwe.mitre.org/data/definitions/295.html)
+		InsecureSkipVerify: false, // better false: (https://cwe.mitre.org/data/definitions/295.html)
 		ServerName:         hostname,
 	})
 	if err != nil {
@@ -117,7 +132,6 @@ func checkLocalFile(filePath string) CertInfo {
 		info.Status = "ERROR"
 		return info
 	}
-
 	// for local files, chain is nil (single cert)
 	return extractCertInfo(cert, filePath, nil, "")
 }
@@ -174,12 +188,17 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 		info.SANs = append(info.SANs, ip.String())
 	}
 
+	const (
+		WarningThreshold = 30
+		SoonThreshold    = 60
+	)
+
 	// status determination
 	if info.DaysRemaining < 0 {
 		info.Status = "EXPIRED"
-	} else if info.DaysRemaining < 30 {
+	} else if info.DaysRemaining < WarningThreshold {
 		info.Status = "WARNING"
-	} else if info.DaysRemaining < 60 {
+	} else if info.DaysRemaining < SoonThreshold {
 		info.Status = "SOON"
 	} else {
 		info.Status = "OK"
