@@ -49,6 +49,11 @@ yay -S cert-checker
 ./cert-checker -web -cert ./certs/cert.pem -key ./certs/key.pem
 ```
 Open http://localhost:8080 or https://localhost:8080 in your browser.
+## Screenshots
+![assets/dashboard_01.png](assets/dashboard_01.png)
+
+![assets/dashboard_02.png](assets/dashboard_02.png)
+
 ## Command Line Options
 
 | Flag | Description |
