@@ -100,6 +100,7 @@ func main() {
 		fmt.Println("  cert-checker -file cert.pem")
 		fmt.Println("  cert-checker -cron")
 		fmt.Println("  cert-checker -log")
+		fmt.Println("  cert-checker -web -cert ./certs/cert.pem -key ./certs/key.pem ")
 		os.Exit(0)
 	}
 	flag.Parse()
@@ -148,6 +149,15 @@ func main() {
 
 		fmt.Println(output.ColYellow, " -ci, -ci-mode", output.ColReset)
 		fmt.Println(output.ColBlue, "         CI/CD Mode: Non-interactive, uses urls.txt automatically", output.ColReset)
+
+		fmt.Println(output.ColYellow, " -w, -web", output.ColReset)
+		fmt.Println(output.ColBlue, "         Start web dashboard on localhost:8080", output.ColReset)
+
+		fmt.Println(output.ColYellow, " -cert", output.ColReset)
+		fmt.Println(output.ColBlue, "         Path to SSL certificate file (.pem/.crt)", output.ColReset)
+
+		fmt.Println(output.ColYellow, " -key", output.ColReset)
+		fmt.Println(output.ColBlue, "         Path to SSL private key file (.pem)", output.ColReset)
 
 		fmt.Println(output.ColYellow, " -h, -help", output.ColReset)
 		fmt.Println(output.ColBlue, "         Show this help message", output.ColReset)
