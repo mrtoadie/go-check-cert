@@ -53,11 +53,15 @@ Open http://localhost:8080 or https://localhost:8080 in your browser.
 
 | Flag | Description |
 | --- | --- |
-| -f	-file	| Path to a local .pem, .crt, .cer, or .key file |
-| -c	-cron |	Interactive Cron setup |
-| -list	-ls |	List and manage Cron jobs |
-| -ci	-ci-mode | CI/CD Mode (non-interactive, uses urls.txt) |
-|-h	-help |	Display help message |
+| -f,	-file	| Path to a local .pem, .crt, .cer, or .key file |
+| -c,	-cron |	Interactive Cron setup |
+| -ls, -list |	List and manage Cron jobs |
+| -l, -log | Show cron job log file |
+| -ci,	-ci-mode | CI/CD Mode (non-interactive, uses urls.txt) |
+| -w, -web | Start web dashboard on localhost:8080 |
+| -cert | Path to SSL certificate file (.pem/.crt) |
+| -key |  Path to SSL private key file (.pem) |
+| -h,	-help |	Display help message |
 
 ## Examples
 Check a single certificate:
@@ -170,6 +174,8 @@ Certificate files with the following extensions work: .pem, .cer, .crt, .key
 :white_check_mark: [Arch Linux](https://archlinux.org/)
 
 :white_check_mark: [Solus](https://getsol.us/)
+
+:white_check_mark: WSL2 (Ubuntu)
 
 ## License
 go-check-cert is licensed under the [MIT License](LICENSE).
