@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"cert-checker/internal/checker"
-	"cert-checker/internal/constants"
+	//"cert-checker/internal/constants"
 )
 
 const (
@@ -19,7 +19,36 @@ const (
 	ColYellow = "\033[33m"
 	ColBlue   = "\033[34m"
 )
-// NEEDS WORK!!
+
+// ReportData ist die Struktur für JSON-Export (mit korrektem Error-Handling)
+type ReportData struct {
+	GeneratedAt string       `json:"generated_at"`
+	TotalCount  int          `json:"total_count"`
+	Results     []CertResult `json:"results"`
+}
+
+// CertResult ist eine angepasste Version von CertInfo für JSON
+type CertResult struct {
+	URL                string   `json:"URL"`
+	Issuer             string   `json:"Issuer"`
+	Subject            string   `json:"Subject"`
+	SerialNumber       string   `json:"SerialNumber"`
+	NotBefore          string   `json:"NotBefore"`
+	NotAfter           string   `json:"NotAfter"`
+	DaysRemaining      int      `json:"DaysRemaining"`
+	Status             string   `json:"Status"`
+	Error              string   `json:"Error"` // Als String statt error-Objekt!
+	KeyAlgorithm       string   `json:"KeyAlgorithm"`
+	KeySize            int      `json:"KeySize"`
+	SignatureAlgorithm string   `json:"SignatureAlgorithm"`
+	SANs               []string `json:"SANs"`
+	ChainLength        int      `json:"ChainLength"`
+	IsChainComplete    bool     `json:"IsChainComplete"`
+	ChainError         string   `json:"ChainError"`
+	IsSelfSigned       bool     `json:"IsSelfSigned"`
+	RootIssuer         string   `json:"RootIssuer"`
+}
+
 // saves the results as JSON
 func ExportJSON(results []checker.CertInfo, filename string) error {
 	if filename == "" {
@@ -35,14 +64,39 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
-	report := struct {
-		GeneratedAt string             `json:"generated_at"`
-		TotalCount  int                `json:"total_count"`
-		Results     []checker.CertInfo `json:"results"`
-	}{
-		GeneratedAt: time.Now().Format(constants.RFC3339Format), 
+	// Konvertiere CertInfo zu CertResult (Error als String)
+	certResults := make([]CertResult, len(results))
+	for i, r := range results {
+		certResults[i] = CertResult{
+			URL:                r.URL,
+			Issuer:             r.Issuer,
+			Subject:            r.Subject,
+			SerialNumber:       r.SerialNumber,
+			NotBefore:          r.NotBefore.Format(time.RFC3339),
+			NotAfter:           r.NotAfter.Format(time.RFC3339),
+			DaysRemaining:      r.DaysRemaining,
+			Status:             r.Status,
+			Error:              "", // Error als String
+			KeyAlgorithm:       r.KeyAlgorithm,
+			KeySize:            r.KeySize,
+			SignatureAlgorithm: r.SignatureAlgorithm,
+			SANs:               r.SANs,
+			ChainLength:        r.ChainLength,
+			IsChainComplete:    r.IsChainComplete,
+			ChainError:         r.ChainError,
+			IsSelfSigned:       r.IsSelfSigned,
+			RootIssuer:         r.RootIssuer,
+		}
+		// Error-Feld sicher setzen
+		if r.Error != nil {
+			certResults[i].Error = r.Error.Error()
+		}
+	}
+
+	report := ReportData{
+		GeneratedAt: time.Now().Format(time.RFC3339),
 		TotalCount:  len(results),
-		Results:     results,
+		Results:     certResults,
 	}
 
 	if err := encoder.Encode(report); err != nil {
@@ -55,7 +109,7 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 // selects the color based on the status of the certificate
 func GetColor(status string) string {
 	switch status {
-	case "OK":
+	case "OK", "VALID":
 		return ColGreen
 	case "SOON", "WARNING":
 		return ColYellow
@@ -143,9 +197,9 @@ func PrintResults(results []checker.CertInfo) {
 		return counts[status]
 	}
 
-	fmt.Printf("%sOK: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
-		ColGreen, count("OK"), ColReset,
-		ColYellow, count("SOON")+count("WARNING"), ColReset,
+	fmt.Printf("%sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
+		ColGreen, count("VALID"), ColReset,
+		ColYellow, count("WARNING"), ColReset,
 		ColRed, count("EXPIRED"), ColReset,
 		ColRed, count("ERROR"), ColReset)
 }

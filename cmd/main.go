@@ -1,9 +1,9 @@
-// Version 1.1.5
+// Version 1.1.6
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: May 09 2026
+// last modification: May 14 2026
 package main
 
 import (
@@ -34,10 +34,9 @@ const (
 	TypeFile
 	TypeURL
 	TypeMixed
-	Version = "1.1.5"
 )
 
-// main.go
+// helper funcs for flag aliase
 func addStringAlias(flagPtr *string, shortName, longName, usage string) {
 	flag.StringVar(flagPtr, shortName, "", fmt.Sprintf("Alias for --%s", longName))
 }
@@ -56,6 +55,8 @@ func main() {
 		"-log": true, "-l": true,
 		"-help": true, "-h": true,
 		"-web": true, "-w": true,
+		"-cert": true,
+		"-key": true,
 	}
 	// pre-validation of arguments
 	for _, arg := range os.Args[1:] {
@@ -90,6 +91,9 @@ func main() {
 	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:8080")
 	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:8080")
 
+	certFlag := flag.String("cert", "", "Path to SSL certificate file (.pem/.crt)")
+    keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
+
 	// usage func
 	flag.Usage = func() {
 		fmt.Println(output.ColGreen, "\n Examples:", output.ColReset)
@@ -121,12 +125,11 @@ func main() {
 	}
 
 	if *webFlag {
-		web.StartServer("8080")
-
+		 web.StartServer("8080", *certFlag, *keyFlag, constants.Version)
 	}
 
 	if *helpFlag {
-		fmt.Println(output.ColBlue, "\ncert-checker "+Version, output.ColReset)
+		fmt.Println(output.ColBlue, "\ncert-checker "+constants.Version, output.ColReset)
 
 		fmt.Println(output.ColYellow, "\n Usage: cert-checker [options]", output.ColReset)
 		fmt.Println(output.ColBlue, "\n Options:", output.ColReset)
@@ -231,7 +234,7 @@ func main() {
 	// loop URLs
 	for i, u := range urls {
 		// catch i and u in a closure so that they are bound correctly in the goroutine
-		i, u := i, u
+		//i, u := i, u
 
 		g.Go(func() error {
 			// check whether the context has expired (timeout)
@@ -333,29 +336,6 @@ func runCIMode() {
 }
 
 // saveReport saves the results as JSON
-/*
-func saveReport(results []checker.CertInfo) error {
-	configPath, err := config.GetConfigPath()
-	if err != nil {
-		return fmt.Errorf("could not determine config path: %w", err)
-	}
-
-	reportDir := filepath.Dir(configPath)
-	filename := filepath.Join(reportDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format("20060102-150405")))
-
-	if err := os.MkdirAll(reportDir, 0755); err != nil {
-		return fmt.Errorf("could not create directory: %w", err)
-	}
-
-	if err := output.ExportJSON(results, filename); err != nil {
-		return fmt.Errorf("could not save JSON: %w", err)
-	}
-
-	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
-	return nil
-}*/
-
-// saveReport in main.go
 func saveReport(results []checker.CertInfo) error {
 	configPath, err := config.GetConfigPath()
 	if err != nil {

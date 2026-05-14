@@ -199,9 +199,10 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 	} else if info.DaysRemaining < WarningThreshold {
 		info.Status = "WARNING"
 	} else if info.DaysRemaining < SoonThreshold {
-		info.Status = "SOON"
+		//info.Status = "SOON"
+		info.Status = "WARNING"
 	} else {
-		info.Status = "OK"
+		info.Status = "VALID"
 	}
 
 	return info

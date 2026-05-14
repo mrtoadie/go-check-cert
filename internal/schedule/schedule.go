@@ -248,7 +248,7 @@ func installCronJob(binaryPath, cronExpression string) error {
 		currentCrontab = ""
 	}
 
-	// Check whether entry already exists
+	// check whether entry already exists
 	if strings.Contains(currentCrontab, binaryPath) && strings.Contains(currentCrontab, "-ci") {
 		fmt.Printf("%sEntry already exists.%s\n", output.ColYellow, output.ColReset)
 		fmt.Println("No changes made.")
@@ -472,7 +472,7 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 	return nil
 }
 
-// ViewLogs zeigt Logs durch einen Pager
+// ViewLogs shows logs through a pager
 func ViewLogs() {
 	logFile, err := config.GetLogPath()
 
@@ -489,7 +489,7 @@ func ViewLogs() {
 		return
 	}
 
-	// Starte 'less' als Pager
+	// start 'less' as a pager
 	cmd := exec.Command("less", "-R", logFile)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
