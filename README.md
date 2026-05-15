@@ -1,28 +1,29 @@
 ![assets/header.png](assets/header.png)
 
-*Stay secure, stay informed*
-
+# *Stay secure, stay informed*
 ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) ![GitHub License](https://img.shields.io/github/license/mrtoadie/go-check-cert) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mrtoadie/go-check-cert/total) ![GitHub Release](https://img.shields.io/github/v/release/mrtoadie/go-check-cert)
 
+**Cert-Checker** is a *privacy-focused* [Go](https://go.dev/) tool that monitors **SSL/TLS certificates** on domains and local files, analyzes expiration dates, and alerts users if any issues are detected.
+It offers both a powerful **command-line** interface for automation and an interactive **web dashboard**.
+
 ## Features
-### Certificate Verification
+- **Certificate Verification**
+   - Hybrid Scanning: Supports remote domains (https://example.com) and local certificate files (.pem, .crt, .key).
+   - Chain Validation: Verifies certificate chains, detects self-signed certificates, and identifies missing intermediates.
+   - CI/CD Ready: Returns specific exit codes (0=OK, 1=Warning, 2=Error) for integration into pipelines.
 
-- **Hybrid Scanning:** Supports remote domains (https://example.com) and local certificate files (.pem, .crt, .key).
-- **Chain Validation:** Verifies certificate chains, detects self-signed certificates, and identifies missing intermediates.
-- **CI/CD Ready:** Returns specific exit codes (0=OK, 1=Warning, 2=Error) for integration into pipelines.
+- **Interactive Web Dashboard**
+   - Real-Time Visualization: Responsive UI with Dark Mode support.
+   - Filtering: Filter by status, search by domain/issuer, and sort by expiration date.
+   - Auto-Refresh: Configurable background updates (e.g., every 15 mins) to keep data fresh.
 
-### Interactive Web Dashboard
-- **Real-Time Visualization:** Responsive UI with Dark Mode support.
-- **Filtering:** Filter by status, search by domain/issuer, and sort by expiration date.
-- **Auto-Refresh:** Configurable background updates (e.g., every 15 mins) to keep data fresh.
+- **Security & Privacy**
+   - Local Storage: No external databases or cloud dependencies required.
+   - HTTPS Dashboard: Built-in support for self-signed or Let's Encrypt certificates to secure the dashboard connection.
 
-### Security & Privacy
-- **Local Storage:** No external databases or cloud dependencies required.
-- **HTTPS Dashboard:** Built-in support for self-signed or Let's Encrypt certificates to secure the dashboard connection.
-
-### Automation & Management
-- **Cron Job Manager:** Built-in interactive CLI to create, list, and remove scheduled scans.
-- **Reporting:** Exports detailed JSON reports with timestamps for archival or external processing.
+- **Automation & Management**
+   - Cron Job Manager: Built-in interactive CLI to create, list, and remove scheduled scans.
+   - Reporting: Exports detailed JSON reports with timestamps for archival or external processing.
 
 ## Quick Start
 ### Build from source
