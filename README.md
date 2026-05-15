@@ -1,7 +1,7 @@
 ![assets/header.png](assets/header.png)
 
 # *Stay secure, stay informed*
-![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) ![GitHub License](https://img.shields.io/github/license/mrtoadie/go-check-cert) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mrtoadie/go-check-cert/total) ![GitHub Release](https://img.shields.io/github/v/release/mrtoadie/go-check-cert) ![GitHub Repo stars](https://img.shields.io/github/stars/mrtoadie/go-check-cert?style=social&label=Stars)   
+![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) ![GitHub License](https://img.shields.io/github/license/mrtoadie/go-check-cert) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mrtoadie/go-check-cert/total) ![GitHub Release](https://img.shields.io/github/v/release/mrtoadie/go-check-cert) ![GitHub Repo stars](https://img.shields.io/github/stars/mrtoadie/go-check-cert?style=flat&label=Stars)   
 
 **Cert-Checker** is a *privacy-focused* [Go](https://go.dev/) tool that monitors **SSL/TLS certificates** on domains and local files, analyzes expiration dates, and alerts users if any issues are detected.
 It offers both a powerful **command-line** interface for automation and an interactive **web dashboard**.
