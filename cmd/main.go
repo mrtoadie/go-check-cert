@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	//"strconv"
 
 	"cert-checker/internal/checker"
 	"cert-checker/internal/config"
@@ -56,7 +57,7 @@ func main() {
 		"-help": true, "-h": true,
 		"-web": true, "-w": true,
 		"-cert": true,
-		"-key": true,
+		"-key":  true,
 	}
 	// pre-validation of arguments
 	for _, arg := range os.Args[1:] {
@@ -92,7 +93,7 @@ func main() {
 	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:8080")
 
 	certFlag := flag.String("cert", "", "Path to SSL certificate file (.pem/.crt)")
-    keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
+	keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
 
 	// usage func
 	flag.Usage = func() {
@@ -104,6 +105,14 @@ func main() {
 		os.Exit(0)
 	}
 	flag.Parse()
+
+	// create default ini file if not exists
+	config.EnsureDefaults()
+
+	if _, _, err := config.InitConfig(); err != nil {
+				fmt.Printf("%sError initializing config: %v%s\n", output.ColRed, err, output.ColReset)
+		os.Exit(1)
+	}
 
 	if *cronFlag {
 		schedule.ScheduleMain()
@@ -126,7 +135,7 @@ func main() {
 	}
 
 	if *webFlag {
-		 web.StartServer("8080", *certFlag, *keyFlag, constants.Version)
+		web.StartServer("8080", *certFlag, *keyFlag, constants.Version)
 	}
 
 	if *helpFlag {
@@ -229,8 +238,33 @@ func main() {
 	// concurrency
 	// global timeout (e.g. 60 seconds for the entire batch)
 	// this prevents from hanging forever if a server doesn't respond
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+	//ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	//defer cancel()
+
+//////////
+// Nach flag.Parse()
+
+/*
+simpleConfig, _ := config.LoadSimpleConfig()
+
+// Timeout aus Config holen (falls vorhanden)
+timeoutSec := 60
+if t, ok := simpleConfig["timeout"]; ok {
+    timeoutSec, _ = strconv.Atoi(t)
+}
+
+// Dann verwenden:
+ctx, cancel := context.WithTimeout(context.Background(), 
+    time.Duration(timeoutSec)*time.Second)
+
+*/
+// Statt: ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+// Nutze:
+timeout := config.GetTimeout()
+ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+		defer cancel()
+///////////////
+
 
 	// errgroup
 	// limits the parallel goroutines to 10
@@ -346,23 +380,25 @@ func runCIMode() {
 }
 
 // saveReport saves the results as JSON
+// saveReport speichert die Ergebnisse als JSON im konfigurierten output_dir
 func saveReport(results []checker.CertInfo) error {
-	configPath, err := config.GetConfigPath()
-	if err != nil {
-		return fmt.Errorf("could not determine config path: %w", err)
-	}
+    // 1. Output-Dir aus Config laden (statt Config-Path zu nutzen!)
+    outputDir, err := config.GetOutputPath()
+    if err != nil {
+        return fmt.Errorf("could not determine output dir: %w", err)
+    }
 
-	reportDir := filepath.Dir(configPath)
-	filename := filepath.Join(reportDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format(constants.ReportDateFormat)))
+    if err := os.MkdirAll(outputDir, 0755); err != nil {
+        return fmt.Errorf("could not create output directory: %w", err)
+    }
 
-	if err := os.MkdirAll(reportDir, 0755); err != nil {
-		return fmt.Errorf("could not create directory: %w", err)
-	}
-
-	if err := output.ExportJSON(results, filename); err != nil {
-		return fmt.Errorf("could not save JSON: %w", err)
-	}
-
-	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
-	return nil
+    filename := filepath.Join(outputDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format(constants.ReportDateFormat)))
+    
+    // 4. JSON schreiben
+    if err := output.ExportJSON(results, filename); err != nil {
+        return fmt.Errorf("could not save JSON: %w", err)
+    }
+    
+    fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
+    return nil
 }

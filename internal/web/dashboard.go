@@ -121,17 +121,26 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 	page.LastUpdated = time.Now()
 	page.Version = constants.Version
 
-	configPath, err := config.GetConfigPath()
+	// 1. Output-Verzeichnis aus Config holen (nutzt die neue resolvePath Logik)
+	outputDir, err := config.GetOutputPath()
 	if err != nil {
 		page.ErrorMessage = fmt.Sprintf("Config error: %v", err)
 		renderPage(w, page)
 		return
 	}
 
-	reportDir := filepath.Dir(configPath)
-	log.Printf("Scanning directory: %s", reportDir)
+	log.Printf("Scanning directory: %s", outputDir)
 
-	files, err := filepath.Glob(filepath.Join(reportDir, "cert-report-*.json"))
+	// 2. Prüfen, ob das Verzeichnis existiert
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		// Ordner fehlt -> Keine Reports möglich
+		page.ErrorMessage = fmt.Sprintf("Output directory not found: %s. Run 'cert-checker' first to generate reports.", outputDir)
+		renderPage(w, page)
+		return
+	}
+
+	// 3. Reports suchen
+	files, err := filepath.Glob(filepath.Join(outputDir, "cert-report-*.json"))
 	if err != nil {
 		page.ErrorMessage = fmt.Sprintf("Error scanning directory: %v", err)
 		renderPage(w, page)
@@ -139,11 +148,12 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(files) == 0 {
-		page.ErrorMessage = "No reports found. Run 'cert-checker -ci' first."
+		page.ErrorMessage = "No reports found. Run 'cert-checker' first to generate reports."
 		renderPage(w, page)
 		return
 	}
 
+	// Sortieren (neueste zuerst)
 	sort.Strings(files)
 	log.Printf("Found %d report files. Merging...", len(files))
 
@@ -194,20 +204,18 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 		for _, res := range report.Results {
 			notBefore, _ := time.Parse(time.RFC3339, res.NotBefore)
 			notAfter, _ := time.Parse(time.RFC3339, res.NotAfter)
-			// error handling
+			
+			// Error Handling (String oder nil)
 			var err error
 			switch v := res.Error.(type) {
 			case string:
 				if v != "" {
 					err = fmt.Errorf(v)
 				}
-			case map[string]interface{}:
-				if len(v) > 0 {
-					err = fmt.Errorf("unknown error object")
-				}
 			case nil:
 				err = nil
 			default:
+				// Andere Typen ignorieren oder als Fehler behandeln
 				err = fmt.Errorf("unexpected error format")
 			}
 
@@ -240,10 +248,12 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 		mergedResults = append(mergedResults, res)
 	}
 
+	// Sortieren nach URL
 	sort.Slice(mergedResults, func(i, j int) bool {
 		return mergedResults[i].URL < mergedResults[j].URL
 	})
 
+	// Bestes LastUpdated finden
 	if len(allGeneratedTimes) > 0 {
 		sort.Slice(allGeneratedTimes, func(i, j int) bool {
 			return allGeneratedTimes[i].After(allGeneratedTimes[j])
