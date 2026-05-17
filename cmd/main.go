@@ -10,10 +10,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
 	//"strconv"
 
 	"cert-checker/internal/checker"
@@ -56,8 +58,9 @@ func main() {
 		"-log": true, "-l": true,
 		"-help": true, "-h": true,
 		"-web": true, "-w": true,
-		"-cert": true,
-		"-key":  true,
+		"-cert":     true,
+		"-key":      true,
+		"-download": true, "-dl": true,
 	}
 	// pre-validation of arguments
 	for _, arg := range os.Args[1:] {
@@ -95,6 +98,9 @@ func main() {
 	certFlag := flag.String("cert", "", "Path to SSL certificate file (.pem/.crt)")
 	keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
 
+	downloadFlag := flag.Bool("download", false, "Download certificate files to certs directory")
+	addBoolAlias(downloadFlag, "dl", "download", "Download certificate files to certs directory")
+
 	// usage func
 	flag.Usage = func() {
 		fmt.Println(output.ColGreen, "\n Examples:", output.ColReset)
@@ -108,11 +114,6 @@ func main() {
 
 	// create default ini file if not exists
 	config.EnsureDefaults()
-
-	if _, _, err := config.InitConfig(); err != nil {
-				fmt.Printf("%sError initializing config: %v%s\n", output.ColRed, err, output.ColReset)
-		os.Exit(1)
-	}
 
 	if *cronFlag {
 		schedule.ScheduleMain()
@@ -137,6 +138,8 @@ func main() {
 	if *webFlag {
 		web.StartServer("8080", *certFlag, *keyFlag, constants.Version)
 	}
+
+
 
 	if *helpFlag {
 		fmt.Println(output.ColBlue, "\ncert-checker "+constants.Version, output.ColReset)
@@ -238,33 +241,9 @@ func main() {
 	// concurrency
 	// global timeout (e.g. 60 seconds for the entire batch)
 	// this prevents from hanging forever if a server doesn't respond
-	//ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	//defer cancel()
-
-//////////
-// Nach flag.Parse()
-
-/*
-simpleConfig, _ := config.LoadSimpleConfig()
-
-// Timeout aus Config holen (falls vorhanden)
-timeoutSec := 60
-if t, ok := simpleConfig["timeout"]; ok {
-    timeoutSec, _ = strconv.Atoi(t)
-}
-
-// Dann verwenden:
-ctx, cancel := context.WithTimeout(context.Background(), 
-    time.Duration(timeoutSec)*time.Second)
-
-*/
-// Statt: ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-// Nutze:
-timeout := config.GetTimeout()
-ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-		defer cancel()
-///////////////
-
+	timeout := config.GetTimeout()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
 
 	// errgroup
 	// limits the parallel goroutines to 10
@@ -275,13 +254,10 @@ ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*
 	// prepare results (same length as urls)
 	results := make([]checker.CertInfo, len(urls))
 
+	timeoutPerRequest := time.Duration(config.GetTimeout()) * time.Second
 	// loop URLs
 	for i, u := range urls {
-		// catch i and u in a closure so that they are bound correctly in the goroutine
-		//i, u := i, u
-
 		g.Go(func() error {
-			// check whether the context has expired (timeout)
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -293,8 +269,7 @@ ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*
 
 			if inputType == TypeFile {
 				hostname = ""
-
-				checkResult = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+				checkResult = checker.CheckCertExpiry(u, hostname, timeoutPerRequest)
 			} else {
 				hostname = checker.ExtractHostname(u)
 				if hostname == "" {
@@ -302,19 +277,75 @@ ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*
 					results[i] = checkResult
 					return nil
 				}
-				// timeout of 5s is per request
-				checkResult = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+				checkResult = checker.CheckCertExpiry(u, hostname, timeoutPerRequest)
 			}
-			// save result in the correct position
 			results[i] = checkResult
 			return nil
 		})
 	}
+
 	// wait until all goroutines are finished
 	if err := g.Wait(); err != nil {
 		fmt.Printf("%sBatch processing interrupted: %v%s\n", output.ColRed, err, output.ColReset)
 		// even if a timeout occurred, show the previous results
 	}
+///////////
+fmt.Printf("\n%s=== DEBUG RESULTS ===%s\n", output.ColBlue, output.ColReset)
+validCount := 0
+nilCertCount := 0
+for i, r := range results {
+    fmt.Printf(" [%d] %s | Status: %s | RawCert: %v\n", i, r.URL, r.Status, r.RawCert != nil)
+    if r.Status == "VALID" {
+        validCount++
+        if r.RawCert == nil {
+            nilCertCount++
+        }
+    }
+}
+fmt.Printf("Total Valid: %d, Valid with Nil Cert: %d\n\n", validCount, nilCertCount)
+
+if *downloadFlag {
+		//debug
+		fmt.Printf("\n%sDownloading valid certificates...%s\n", output.ColBlue, output.ColReset)
+	fmt.Printf("BLA")
+		certDir, err := config.GetCertPath()
+		
+		if err != nil {
+			fmt.Printf("%sError determining cert directory: %v%s\n", output.ColRed, err, output.ColReset)
+		} else {
+			// Make sure folder
+			if err := os.MkdirAll(certDir, 0755); err != nil {
+				fmt.Printf("%sWarning: Could not create cert dir: %v%s\n", output.ColYellow, err, output.ColReset)
+			} else {
+				fmt.Print("\n\nBLUB", certDir)
+				savedCount := 0
+				for _, r := range results {
+					if r.Status == "VALID" && r.RawCert != nil {
+						
+						fmt.Printf("dsfsdfdsf")
+						hostname := r.URL
+						if r.URL != "" && strings.Contains(r.URL, "://") {
+							
+							u, _ := url.Parse(r.URL)
+							if u != nil {
+								hostname = u.Hostname()
+							}
+						}
+					fmt.Printf("== Not valid ==")
+						if err := checker.SaveCert(r.RawCert, hostname, certDir); err == nil {
+							savedCount++
+							fmt.Printf("%sSaved:%s %s/%s.pem\n", output.ColGreen, output.ColReset, certDir, hostname)
+						} else {
+							fmt.Printf("%sError saving %s: %v%s\n", output.ColRed, hostname, err, output.ColReset)
+						}
+					}
+				}
+				fmt.Printf("%sDownloaded %d certificate(s).%s\n", output.ColBlue, savedCount, output.ColReset)
+			}
+		}
+	}
+/////////
+
 	// print results
 	output.PrintResults(results)
 
@@ -355,15 +386,17 @@ func runCIMode() {
 
 	fmt.Printf("%sCheck %d URLs from urls.txt...%s\n\n", output.ColBlue, len(urls), output.ColReset)
 
+	timeoutPerRequest := time.Duration(config.GetTimeout()) * time.Second
+
 	// check URLs
 	results := make([]checker.CertInfo, len(urls))
 	for i, u := range urls {
 		hostname := checker.ExtractHostname(u)
 		if hostname == "" {
-			results[i] = checker.CertInfo{URL: u, Status: "ERROR", Error: fmt.Errorf("empty hostname")}
+			results[i] = checker.CheckCertExpiry(u, hostname, timeoutPerRequest)
 			continue
 		}
-		results[i] = checker.CheckCertExpiry(u, hostname, 5*time.Second)
+		results[i] = checker.CheckCertExpiry(u, hostname, timeoutPerRequest)
 	}
 
 	// output results (WITHOUT interactive query)
@@ -372,7 +405,7 @@ func runCIMode() {
 	// save JSON
 	if err := saveReport(results); err != nil {
 		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
-		os.Exit(3) // exit code 3 for storage/save error
+		os.Exit(3)
 	}
 
 	// exit code based on results
@@ -380,25 +413,23 @@ func runCIMode() {
 }
 
 // saveReport saves the results as JSON
-// saveReport speichert die Ergebnisse als JSON im konfigurierten output_dir
 func saveReport(results []checker.CertInfo) error {
-    // 1. Output-Dir aus Config laden (statt Config-Path zu nutzen!)
-    outputDir, err := config.GetOutputPath()
-    if err != nil {
-        return fmt.Errorf("could not determine output dir: %w", err)
-    }
+	outputDir, err := config.GetOutputPath()
+	if err != nil {
+		return fmt.Errorf("could not determine output dir: %w", err)
+	}
 
-    if err := os.MkdirAll(outputDir, 0755); err != nil {
-        return fmt.Errorf("could not create output directory: %w", err)
-    }
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("could not create output directory: %w", err)
+	}
 
-    filename := filepath.Join(outputDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format(constants.ReportDateFormat)))
-    
-    // 4. JSON schreiben
-    if err := output.ExportJSON(results, filename); err != nil {
-        return fmt.Errorf("could not save JSON: %w", err)
-    }
-    
-    fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
-    return nil
+	filename := filepath.Join(outputDir, fmt.Sprintf("cert-report-%s.json", time.Now().Format(constants.ReportDateFormat)))
+
+	// write JSON
+	if err := output.ExportJSON(results, filename); err != nil {
+		return fmt.Errorf("could not save JSON: %w", err)
+	}
+
+	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
+	return nil
 }

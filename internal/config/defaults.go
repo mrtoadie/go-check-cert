@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	//"strings"
 
 	"cert-checker/internal/constants"
 	"cert-checker/internal/output"
 )
 
-// EnsureDefaults erstellt config.ini und default_urls.txt, falls sie nicht existieren.
-// Dies sollte am Anfang von main() aufgerufen werden.
+// EnsureDefaults creates config.ini and default_urls.txt if they do not exist.
+// called at the beginning of main().
 func EnsureDefaults() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -21,21 +20,35 @@ func EnsureDefaults() {
 	}
 
 	configDir := filepath.Join(homeDir, constants.ConfigDir)
-	
-	// Sicherstellen, dass das Verzeichnis existiert
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		fmt.Printf("%sError creating config dir: %v%s\n", output.ColRed, err, output.ColReset)
 		return
 	}
 
-	// 1. config.ini erstellen, falls nicht vorhanden
 	configIniPath := filepath.Join(configDir, "config.ini")
 	if _, err := os.Stat(configIniPath); os.IsNotExist(err) {
 		createConfigIni(configIniPath)
 	}
 
-	// 2. default_urls.txt erstellen, falls nicht vorhanden
-	defaultURLsPath := filepath.Join(configDir, constants.DefaultURLsFile)
+	logsDir := filepath.Join(configDir, "logs")
+	if err := os.MkdirAll(logsDir, 0755); err != nil {
+		fmt.Printf("%sError creating logs dir: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
+
+	reportsDir := filepath.Join(configDir, "reports")
+	if err := os.MkdirAll(reportsDir, 0755); err != nil {
+		fmt.Printf("%sError creating reports dir: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
+
+	certsDir := filepath.Join(configDir, "certs")
+	if err := os.MkdirAll(certsDir, 0755); err != nil {
+		fmt.Printf("%sError creating certs dir: %v%s\n", output.ColRed, err, output.ColReset)
+		return
+	}
+
+	defaultURLsPath := filepath.Join(configDir, "default_urls.txt")
 	if _, err := os.Stat(defaultURLsPath); os.IsNotExist(err) {
 		createDefaultURLs(defaultURLsPath)
 	}
@@ -48,28 +61,20 @@ func createConfigIni(path string) {
 
 [paths]
 # Path to URL list (supports ~, /or relative path)
-# If empty, ~/.config/cert-checker/urls.txt is used
-urls_file = 
+urls_file = ~/.config/cert-checker/default_urls.txt
 
 # Path to the log file
-# If empty, ~/.config/cert-checker/cert-check.log is used
-log_file = 
+log_file = ~/.config/cert-checker/logs/cert-check.log
 
 # Directory for JSON reports
-# If empty, ~/.config/cert-checker/reports is used
-output_dir = 
+report_dir = ~/.config/cert-checker/reports
+
+# Directory for certificate files
+cert_dir = ~/.config/cert-checker/certs
 
 [settings]
 # Timeout in seconds for network checks (default: 60)
 timeout = 60
-
-# Default first launch URLs (comma separated)
-# If empty, default_urls.txt is used
-default_urls = 
-
-# Note: 
-# -Empty values use the defaults from default_urls.txt or the code defaults.
-# -Comments start with # or ;
 `
 
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
@@ -88,9 +93,7 @@ func createDefaultURLs(path string) {
 
 archlinux.org
 github.com
-ubuntu.com
 go.dev
-proton.me
 cloudflare.com
 `
 
@@ -98,6 +101,5 @@ cloudflare.com
 		fmt.Printf("%sError creating default_urls.txt: %v%s\n", output.ColRed, err, output.ColReset)
 		return
 	}
-
 	fmt.Printf("%sCreated:%s %s (Default URL source)%s\n", output.ColGreen, output.ColReset, path, output.ColReset)
 }

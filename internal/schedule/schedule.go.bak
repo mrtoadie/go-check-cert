@@ -17,20 +17,22 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-// CronJob represents a cron entry
+// cron job entry with comment and command
 type CronJob struct {
 	Comment   string
 	Command   string
-	Index     int
-	FullEntry string
+	Index     int    // position in the crontab (for deletion)
+	FullEntry string // original line (comment + command)
 }
 
-// ScheduleMain: starts the cron setup menu
+// Schedule launches the interactive menu for cron job setup
 func ScheduleMain() {
+
 	var action string
 
 	fmt.Printf("%s=== CRON JOB SETUP ===%s\n", output.ColBlue, output.ColReset)
 
+	// get dynamic paths
 	urlsPath, _ := config.GetConfigPath()
 	logPath, _ := config.GetLogPath()
 
@@ -38,6 +40,7 @@ func ScheduleMain() {
 	fmt.Printf("%sURLs File: %s%s\n", output.ColBlue, urlsPath, output.ColReset)
 	fmt.Printf("%sLog File:  %s%s\n\n", output.ColBlue, logPath, output.ColReset)
 
+	// cron menu
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -64,10 +67,13 @@ func ScheduleMain() {
 		ListAndManageJobs()
 	case "exit":
 		fmt.Println("Bye...")
+		return
 	}
+
 }
 
-// validateCronField: is a generic validation function
+// /////
+// validateCronField ist eine generische Validierungsfunktion
 func validateCronField(value string, min, max int, allowWildcard bool) error {
 	if value == "" {
 		return fmt.Errorf("field cannot be empty")
@@ -85,55 +91,129 @@ func validateCronField(value string, min, max int, allowWildcard bool) error {
 	return nil
 }
 
-// CreateCron: creates a new cron job
+///////7
+
+// create cron jobs
 func CreateCron() {
 	var (
-		minute         = "0"
+		minute         string = "0"
 		hour           string
-		dayOfMonth     = "*"
-		month          = "*"
-		dayOfWeek      = "*"
+		dayOfMonth     string = "*"
+		month          string = "*"
+		dayOfWeek      string = "*"
 		cronExpression string
 		confirm        bool
 	)
 
 	fmt.Printf("%s=== CREATE CRON JOB ===%s\n\n", output.ColBlue, output.ColReset)
 	logPath, _ := config.GetLogPath()
-
 	fmt.Printf("%sInfo: Cron job will use:%s\n", output.ColBlue, output.ColReset)
-	fmt.Printf("  URLs: %s\n", logPath)
-
+	fmt.Printf("  URLs: %s\n", logPath) // Hinweis: Hier sollte eigentlich urlsPath stehen, aber logPath wurde im Original genutzt. Korrigiert unten.
+	// create cron
 	form := huh.NewForm(
+		// minute (0-59)
 		huh.NewGroup(
-			huh.NewInput().Title("Minute").Description("When in the hour? (0-59)").Placeholder("0").
-				Validate(func(s string) error { return validateCronField(s, 0, 59, false) }).Value(&minute),
-			huh.NewInput().Title("Hour").Description("When in the day? (0-23, */6 = every 6h)").Placeholder("8").
-				Validate(func(s string) error { return validateCronField(s, 0, 23, true) }).Value(&hour),
+			huh.NewInput().
+				Title("Minute").Description("When in the hour? (0-59)").Placeholder("0").
+				Validate(func(s string) error {
+					if s == "" {
+						return fmt.Errorf("Please enter a minute between 0-59")
+					}
+					m, err := strconv.Atoi(s)
+					if err != nil {
+						return fmt.Errorf("Please enter a number")
+					}
+					if m < 0 || m > 59 {
+						return fmt.Errorf("0 59")
+					}
+					return nil
+				}).Value(&minute),
+			// hour of the day
+			huh.NewInput().
+				Title("Hour").
+				Description("When in the day? (0-23, 0=midnight, */6 = every 6 hours)").
+				Placeholder("8").
+				Validate(func(s string) error {
+					if s == "" {
+						return fmt.Errorf("Please enter an hour")
+					}
+					if strings.HasPrefix(s, "*/") {
+						// cron expressions like */6
+						return nil
+					}
+					h, err := strconv.Atoi(s)
+					if err != nil {
+						return fmt.Errorf("Please enter a number or */N")
+					}
+					if h < 0 || h > 23 {
+						return fmt.Errorf("Hour must be between 0 and 23")
+					}
+					return nil
+				}).
+				Value(&hour),
 		).WithTheme(huh.ThemeBase16()),
+		// day of the month (1-31)
 		huh.NewGroup(
-			huh.NewInput().Title("Day of month").Description("Which day? (*) = every day").
-				Validate(func(s string) error { return validateCronField(s, 1, 31, true) }).Value(&dayOfMonth),
-			huh.NewSelect[string]().Title("Month").Description("Which month? (*) = every month").
+			huh.NewInput().
+				Title("Day of the month").
+				Description("Which day? (*) = every day").
+				Validate(func(s string) error {
+					if s == "" {
+						return fmt.Errorf("Enter day")
+					}
+					if strings.HasPrefix(s, "*") {
+						return nil
+					}
+					d, err := strconv.Atoi(s)
+					if err != nil {
+						return fmt.Errorf("Please enter a number")
+					}
+					if d < 0 || d > 31 {
+						return fmt.Errorf("1 31")
+					}
+					return nil
+				}).
+				Value(&dayOfMonth),
+			// month (1-12) or "*" for each month
+			huh.NewSelect[string]().
+				Title("Month").
+				Description("Which month? (*) = every month").
 				Options(
 					huh.NewOption("Every month (*)", "*"),
-					huh.NewOption("January (1)", "1"), huh.NewOption("February (2)", "2"),
-					huh.NewOption("March (3)", "3"), huh.NewOption("April (4)", "4"),
-					huh.NewOption("May (5)", "5"), huh.NewOption("June (6)", "6"),
-					huh.NewOption("July (7)", "7"), huh.NewOption("August (8)", "8"),
-					huh.NewOption("September (9)", "9"), huh.NewOption("October (10)", "10"),
-					huh.NewOption("November (11)", "11"), huh.NewOption("December (12)", "12"),
-				).Value(&month),
+					huh.NewOption("January (1)", "1"),
+					huh.NewOption("February (2)", "2"),
+					huh.NewOption("March (3)", "3"),
+					huh.NewOption("April (4)", "4"),
+					huh.NewOption("May (5)", "5"),
+					huh.NewOption("June (6)", "6"),
+					huh.NewOption("July (7)", "7"),
+					huh.NewOption("August (8)", "8"),
+					huh.NewOption("September (9)", "9"),
+					huh.NewOption("October (10)", "10"),
+					huh.NewOption("November (11)", "11"),
+					huh.NewOption("December (12)", "12"),
+				).
+				Value(&month),
 		).WithTheme(huh.ThemeBase16()),
+		// day of the week (0-6, 0=Sunday) or "*" for every day
 		huh.NewGroup(
-			huh.NewSelect[string]().Title("Weekday").Description("Which day? (*) = every day").
+			huh.NewSelect[string]().
+				Title("Weekday").
+				Description("Which day of the week? (*) = every day").
 				Options(
 					huh.NewOption("Every day (*)", "*"),
-					huh.NewOption("Sunday (0)", "0"), huh.NewOption("Monday (1)", "1"),
-					huh.NewOption("Tuesday (2)", "2"), huh.NewOption("Wednesday (3)", "3"),
-					huh.NewOption("Thursday (4)", "4"), huh.NewOption("Friday (5)", "5"),
+					huh.NewOption("Sunday (0)", "0"),
+					huh.NewOption("Montag (1)", "1"),
+					huh.NewOption("Tuesday (2)", "2"),
+					huh.NewOption("Wednesday (3)", "3"),
+					huh.NewOption("Thursday (4)", "4"),
+					huh.NewOption("Friday (5)", "5"),
 					huh.NewOption("Saturday (6)", "6"),
-				).Value(&dayOfWeek),
+				).
+				Value(&dayOfWeek),
 		).WithTheme(huh.ThemeBase16()),
+		// confirm
+
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("Confirm").
@@ -155,7 +235,7 @@ func CreateCron() {
 
 	cronExpression = fmt.Sprintf("%s %s %s %s %s", minute, hour, dayOfMonth, month, dayOfWeek)
 	binaryPath := getBinaryPathSafe()
-
+	
 	if err := installCronJob(binaryPath, cronExpression); err != nil {
 		fmt.Printf("%sError: %v%s\n", output.ColRed, err, output.ColReset)
 		return
@@ -187,39 +267,48 @@ func installCronJob(binaryPath, cronExpression string) error {
 	comment := fmt.Sprintf("# cert-checker - %s", time.Now().Format(constants.CronDateFormat))
 	cronEntry := fmt.Sprintf("%s %s -ci >> %s 2>&1", cronExpression, binaryPath, logFile)
 
+	// get current crontab
 	cmd := exec.Command("crontab", "-l")
 	out, err := cmd.Output()
 	currentCrontab := string(out)
+
 	if err != nil {
 		currentCrontab = ""
 	}
 
+	// check whether entry already exists
 	if strings.Contains(currentCrontab, binaryPath) && strings.Contains(currentCrontab, "-ci") {
 		fmt.Printf("%sEntry already exists.%s\n", output.ColYellow, output.ColReset)
 		fmt.Println("No changes made.")
 		return nil
 	}
 
+	// add new entry
 	newCrontab := currentCrontab
 	if newCrontab != "" && !strings.HasSuffix(newCrontab, "\n") {
 		newCrontab += "\n"
 	}
 	newCrontab += comment + "\n" + cronEntry + "\n"
 
+	// set crontab
 	cmd = exec.Command("crontab", "-")
 	cmd.Stdin = strings.NewReader(newCrontab)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("setting crontab failed: %w", err)
+		return fmt.Errorf("Setting crontab failed: %w", err)
 	}
 
 	fmt.Printf("\n%sCron job created successfully!%s\n", output.ColGreen, output.ColReset)
 	fmt.Printf("Cron-Expression: %s\n", cronExpression)
-	fmt.Printf("Command: %s\n", cronEntry)
-	fmt.Printf("%sLog: ./cert-checker -log OR tail -f %s%s\n", output.ColYellow, logFile, output.ColReset)
+	fmt.Printf("command: %s\n", cronEntry)
+
+	// dynamic reference to the log file (uses config.GetLogPath)
+	//logPath, err := config.GetLogPath()
+
+	fmt.Printf("%sLog: ./cert-checker -log OR tail -f %s%s\n", output.ColYellow, logPath, output.ColReset)
 	return nil
 }
 
-// getCronJobs: central function for parsing the crontab
+// getCronJobs ist eine zentrale Funktion zum Parsen der Crontab
 func getCronJobs() ([]CronJob, error) {
 	cmd := exec.Command("crontab", "-l")
 	out, err := cmd.Output()
@@ -245,21 +334,49 @@ func getCronJobs() ([]CronJob, error) {
 				Index:     i,
 				FullEntry: line + "\n" + command,
 			})
-			i++ // skip command line
+			i++ // Skip command line
 		}
 	}
 	return jobs, nil
 }
 
-// ListAndManageJobs lists and manages cron jobs
+// ListAndManageJobs
 func ListAndManageJobs() {
 	fmt.Printf("%s=== CERTIFICATE CHECK CRON JOBS ===%s\n\n", output.ColBlue, output.ColReset)
 
-	jobs, err := getCronJobs()
+	// read crontab
+	cmd := exec.Command("crontab", "-l")
+	out, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("%s%s%s\n", output.ColYellow, err.Error(), output.ColReset)
-		fmt.Println("Create one with: ./cert-checker -cron")
+		fmt.Printf("%sNo crontab found or empty.%s\n", output.ColYellow, output.ColReset)
 		return
+	}
+
+	lines := strings.Split(string(out), "\n")
+	jobs := []CronJob{}
+
+	// collect jobs
+	for i := 0; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		// search for the comment
+		if strings.Contains(line, constants.CronMarker) {
+			// search for the command
+			var command string
+			if i+1 < len(lines) {
+				command = strings.TrimSpace(lines[i+1])
+			} else {
+				command = "(Command not found)"
+			}
+			// save job
+			jobs = append(jobs, CronJob{
+				Comment:   line,
+				Command:   command,
+				Index:     i,
+				FullEntry: line + "\n" + command,
+			})
+			// Increase index to skip command line
+			i++
+		}
 	}
 
 	if len(jobs) == 0 {
@@ -268,6 +385,7 @@ func ListAndManageJobs() {
 		return
 	}
 
+	// print jobs
 	fmt.Printf("%sTotal: %d job(s) found.%s\n\n", output.ColBlue, len(jobs), output.ColReset)
 	for i, job := range jobs {
 		fmt.Printf("%s%d.%s %s\n", output.ColGreen, i+1, output.ColReset, job.Comment)
@@ -296,7 +414,6 @@ func ListAndManageJobs() {
 
 	if action == "back" {
 		fmt.Println("Back to main menu...")
-		return
 	}
 
 	if action == "delete" {
@@ -329,7 +446,7 @@ func ListAndManageJobs() {
 		}
 
 		if len(selectedJobs) == 0 {
-			fmt.Println("No jobs selected. Cancel.")
+			fmt.Println("No jobs selected. Abbruch.")
 			return
 		}
 
@@ -348,7 +465,7 @@ func ListAndManageJobs() {
 		}
 
 		if !confirm {
-			fmt.Println("Cancel.")
+			fmt.Println("Abort.")
 			return
 		}
 
@@ -359,22 +476,25 @@ func ListAndManageJobs() {
 	}
 }
 
-func removeSelectedCronJobs(selectedIndices []int) error {	
+// removeSelectedCronJobs deletes selected cron jobs
+func removeSelectedCronJobs(selectedIndices []int) error {
 	cmd := exec.Command("crontab", "-l")
 	out, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("reading crontab failed: %w", err)
 	}
 
-	lines := strings.Split(string(out), "\n")
+	originalCrontab := string(out)
+	lines := strings.Split(originalCrontab, "\n")
+
 	type Entry struct {
 		Line     string
 		ToDelete bool
 	}
 
 	entries := make([]Entry, len(lines))
-	for i := range lines {
-		entries[i] = Entry{Line: lines[i], ToDelete: false}
+	for i, line := range lines {
+		entries[i] = Entry{Line: line, ToDelete: false}
 	}
 
 	jobIndex := 0
@@ -416,9 +536,10 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 	return nil
 }
 
-// ViewLogs
+// ViewLogs shows logs through a pager
 func ViewLogs() {
 	logFile, err := config.GetLogPath()
+
 	if err != nil {
 		fmt.Printf("%sError getting log path: %v%s\n", output.ColRed, err, output.ColReset)
 		return
@@ -427,12 +548,12 @@ func ViewLogs() {
 	if _, err := os.Stat(logFile); os.IsNotExist(err) {
 		fmt.Printf("%sNo log file found yet.%s\n", output.ColYellow, output.ColReset)
 		fmt.Println("Logs are created when a Cron job runs.")
-		fmt.Printf("Expected at: %s\n", logFile)
 		fmt.Println("\nPress Enter to continue...")
 		fmt.Scanln()
 		return
 	}
 
+	// start 'less' as a pager
 	cmd := exec.Command("less", "-R", logFile)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

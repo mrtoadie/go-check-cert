@@ -16,21 +16,17 @@ func ExtractHostname(input string) string {
 	if input == "" {
 		return ""
 	}
-
 	// remove protocol
 	host := strings.TrimPrefix(input, "https://")
 	host = strings.TrimPrefix(host, "http://")
-
 	// remove path (everything after the first '/')
 	if idx := strings.Index(host, "/"); idx != -1 {
 		host = host[:idx]
 	}
-
 	// remove port (everything after the first ':')
 	if idx := strings.Index(host, ":"); idx != -1 {
 		host = host[:idx]
 	}
-
 	return host
 }
 
@@ -67,10 +63,8 @@ func CalculateExitCode(results []CertInfo) int {
 			hasWarning = true
 		}
 	}
-
 	if hasWarning {
 		return 1
 	}
-
 	return 0
 }

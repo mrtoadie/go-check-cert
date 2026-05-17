@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"cert-checker/internal/checker"
-	//"cert-checker/internal/constants"
 )
 
 const (
@@ -20,14 +19,14 @@ const (
 	ColBlue   = "\033[34m"
 )
 
-// ReportData ist die Struktur für JSON-Export (mit korrektem Error-Handling)
+// ReportData is the structure for JSON export
 type ReportData struct {
 	GeneratedAt string       `json:"generated_at"`
 	TotalCount  int          `json:"total_count"`
 	Results     []CertResult `json:"results"`
 }
 
-// CertResult ist eine angepasste Version von CertInfo für JSON
+// CertResult is a customized version of CertInfo for JSON
 type CertResult struct {
 	URL                string   `json:"URL"`
 	Issuer             string   `json:"Issuer"`
@@ -64,7 +63,7 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
-	// Konvertiere CertInfo zu CertResult (Error als String)
+	// convert CertInfo to CertResult (Error as String)
 	certResults := make([]CertResult, len(results))
 	for i, r := range results {
 		certResults[i] = CertResult{
@@ -76,7 +75,7 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 			NotAfter:           r.NotAfter.Format(time.RFC3339),
 			DaysRemaining:      r.DaysRemaining,
 			Status:             r.Status,
-			Error:              "", // Error als String
+			Error:              "",
 			KeyAlgorithm:       r.KeyAlgorithm,
 			KeySize:            r.KeySize,
 			SignatureAlgorithm: r.SignatureAlgorithm,
@@ -87,7 +86,6 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 			IsSelfSigned:       r.IsSelfSigned,
 			RootIssuer:         r.RootIssuer,
 		}
-		// Error-Feld sicher setzen
 		if r.Error != nil {
 			certResults[i].Error = r.Error.Error()
 		}

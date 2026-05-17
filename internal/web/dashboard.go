@@ -121,7 +121,7 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 	page.LastUpdated = time.Now()
 	page.Version = constants.Version
 
-	// 1. Output-Verzeichnis aus Config holen (nutzt die neue resolvePath Logik)
+	// get output directory from config
 	outputDir, err := config.GetOutputPath()
 	if err != nil {
 		page.ErrorMessage = fmt.Sprintf("Config error: %v", err)
@@ -131,15 +131,14 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Scanning directory: %s", outputDir)
 
-	// 2. Prüfen, ob das Verzeichnis existiert
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		// Ordner fehlt -> Keine Reports möglich
+	// check whether the directory exists
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {		
 		page.ErrorMessage = fmt.Sprintf("Output directory not found: %s. Run 'cert-checker' first to generate reports.", outputDir)
 		renderPage(w, page)
 		return
 	}
 
-	// 3. Reports suchen
+	// search reports
 	files, err := filepath.Glob(filepath.Join(outputDir, "cert-report-*.json"))
 	if err != nil {
 		page.ErrorMessage = fmt.Sprintf("Error scanning directory: %v", err)
@@ -153,7 +152,7 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Sortieren (neueste zuerst)
+	// sort (newest first)
 	sort.Strings(files)
 	log.Printf("Found %d report files. Merging...", len(files))
 

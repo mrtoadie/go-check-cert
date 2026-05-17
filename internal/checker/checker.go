@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -36,6 +37,7 @@ type CertInfo struct {
 	ChainError         string
 	IsSelfSigned       bool
 	RootIssuer         string
+	RawCert            *x509.Certificate
 }
 
 func cleanURL(target string) string {
@@ -103,6 +105,8 @@ func checkRemoteCert(target string, hostname string, timeout time.Duration) Cert
 		return info
 	}
 
+	info.RawCert = certs[0] // store the leaf cert for potential future use
+
 	// extract info (pass the full chain for validation)
 	return extractCertInfo(certs[0], target, certs, hostname)
 }
@@ -132,6 +136,8 @@ func checkLocalFile(filePath string) CertInfo {
 		info.Status = "ERROR"
 		return info
 	}
+	info.RawCert = cert // store the cert for potential future use
+
 	// for local files, chain is nil (single cert)
 	return extractCertInfo(cert, filePath, nil, "")
 }
@@ -206,4 +212,38 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 	}
 
 	return info
+}
+
+// SaveCert saves the certificate as a PEM file
+func SaveCert(cert *x509.Certificate, hostname string, outputDir string) error {
+	if cert == nil {
+		return fmt.Errorf("no certificate to save")
+	}
+
+	// clean filename
+	hostname = strings.ReplaceAll(hostname, ":", "_")
+	hostname = strings.ReplaceAll(hostname, "/", "_")
+	// file name: hostname.pem
+	timestamp := time.Now().Format("20060102")
+	filename := fmt.Sprintf("%s_%s.pem", hostname, timestamp)
+
+	fullPath := filepath.Join(outputDir, filename)
+
+	// PEM-Encoding
+	block := &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	}
+
+	file, err := os.Create(fullPath)
+	if err != nil {
+		return fmt.Errorf("could not create file %s: %w", fullPath, err)
+	}
+	defer file.Close()
+
+	if err := pem.Encode(file, block); err != nil {
+		return fmt.Errorf("could not encode PEM: %w", err)
+	}
+
+	return nil
 }
