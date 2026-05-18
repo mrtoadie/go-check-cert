@@ -24,6 +24,7 @@ It offers both a powerful **command-line** interface for automation and an inter
 - **Automation & Management**
    - Cron Job Manager: Built-in interactive CLI to create, list, and remove scheduled scans.
    - Reporting: Exports detailed JSON reports with timestamps for archival or external processing.
+   - Save Certificates: Download valid certificates (optional)
 
 ## Quick Start
 ### Build from source
@@ -61,6 +62,7 @@ Open http://localhost:8080 or https://localhost:8080 in your browser.
 | --- | --- |
 | -f,	-file	| Path to a local .pem, .crt, .cer, or .key file |
 | -c,	-cron |	Interactive Cron setup |
+| -dl, -download | Download valid certificates to certs folder |
 | -ls, -list |	List and manage Cron jobs |
 | -l, -log | Show cron job log file |
 | -ci,	-ci-mode | CI/CD Mode (non-interactive, uses urls.txt) |
