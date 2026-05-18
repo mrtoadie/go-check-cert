@@ -152,6 +152,7 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 		NotBefore:     cert.NotBefore,
 		NotAfter:      cert.NotAfter,
 		DaysRemaining: int(cert.NotAfter.UTC().Sub(time.Now().UTC()).Hours() / 24),
+		RawCert:       cert,
 	}
 
 	// chain logic

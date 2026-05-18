@@ -139,8 +139,6 @@ func main() {
 		web.StartServer("8080", *certFlag, *keyFlag, constants.Version)
 	}
 
-
-
 	if *helpFlag {
 		fmt.Println(output.ColBlue, "\ncert-checker "+constants.Version, output.ColReset)
 
@@ -152,6 +150,9 @@ func main() {
 
 		fmt.Println(output.ColYellow, " -c, -cron", output.ColReset)
 		fmt.Println(output.ColBlue, "         Create & manage cron jobs", output.ColReset)
+
+		fmt.Println(output.ColYellow, " -dl, -download", output.ColReset)
+		fmt.Println(output.ColBlue, "         Download valid certificates to certs folder", output.ColReset)
 
 		fmt.Println(output.ColYellow, " -ls, -list", output.ColReset)
 		fmt.Println(output.ColBlue, "         Show / remove cron jobs", output.ColReset)
@@ -289,49 +290,47 @@ func main() {
 		fmt.Printf("%sBatch processing interrupted: %v%s\n", output.ColRed, err, output.ColReset)
 		// even if a timeout occurred, show the previous results
 	}
-///////////
-fmt.Printf("\n%s=== DEBUG RESULTS ===%s\n", output.ColBlue, output.ColReset)
-validCount := 0
-nilCertCount := 0
-for i, r := range results {
-    fmt.Printf(" [%d] %s | Status: %s | RawCert: %v\n", i, r.URL, r.Status, r.RawCert != nil)
-    if r.Status == "VALID" {
-        validCount++
-        if r.RawCert == nil {
-            nilCertCount++
-        }
-    }
-}
-fmt.Printf("Total Valid: %d, Valid with Nil Cert: %d\n\n", validCount, nilCertCount)
 
-if *downloadFlag {
+	/* DEBUG: print raw cert presence in results
+	   fmt.Printf("\n%s=== DEBUG RESULTS ===%s\n", output.ColBlue, output.ColReset)
+	   validCount := 0
+	   nilCertCount := 0
+	   for i, r := range results {
+	       fmt.Printf(" [%d] %s | Status: %s | RawCert: %v\n", i, r.URL, r.Status, r.RawCert != nil)
+	       if r.Status == "VALID" {
+	           validCount++
+	           if r.RawCert == nil {
+	               nilCertCount++
+	           }
+	       }
+	   }
+	   fmt.Printf("Total Valid: %d, Valid with Nil Cert: %d\n\n", validCount, nilCertCount)
+	*/
+
+	// download certs if requested
+	if *downloadFlag {
 		//debug
 		fmt.Printf("\n%sDownloading valid certificates...%s\n", output.ColBlue, output.ColReset)
-	fmt.Printf("BLA")
 		certDir, err := config.GetCertPath()
-		
+
 		if err != nil {
 			fmt.Printf("%sError determining cert directory: %v%s\n", output.ColRed, err, output.ColReset)
 		} else {
-			// Make sure folder
+			// make sure folder
 			if err := os.MkdirAll(certDir, 0755); err != nil {
 				fmt.Printf("%sWarning: Could not create cert dir: %v%s\n", output.ColYellow, err, output.ColReset)
 			} else {
-				fmt.Print("\n\nBLUB", certDir)
 				savedCount := 0
 				for _, r := range results {
 					if r.Status == "VALID" && r.RawCert != nil {
-						
-						fmt.Printf("dsfsdfdsf")
 						hostname := r.URL
 						if r.URL != "" && strings.Contains(r.URL, "://") {
-							
+
 							u, _ := url.Parse(r.URL)
 							if u != nil {
 								hostname = u.Hostname()
 							}
 						}
-					fmt.Printf("== Not valid ==")
 						if err := checker.SaveCert(r.RawCert, hostname, certDir); err == nil {
 							savedCount++
 							fmt.Printf("%sSaved:%s %s/%s.pem\n", output.ColGreen, output.ColReset, certDir, hostname)
@@ -344,7 +343,6 @@ if *downloadFlag {
 			}
 		}
 	}
-/////////
 
 	// print results
 	output.PrintResults(results)
