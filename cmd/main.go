@@ -141,7 +141,7 @@ func main() {
 
 	if *helpFlag {
 		fmt.Println(output.ColBlue, "\ncert-checker "+constants.Version, output.ColReset)
-
+		
 		fmt.Println(output.ColYellow, "\n Usage: cert-checker [options]", output.ColReset)
 		fmt.Println(output.ColBlue, "\n Options:", output.ColReset)
 
@@ -174,6 +174,8 @@ func main() {
 
 		fmt.Println(output.ColYellow, " -h, -help", output.ColReset)
 		fmt.Println(output.ColBlue, "         Show this help message", output.ColReset)
+
+		fmt.Println(output.ColBlue, "\n Web: https://github.com/mrtoadie/go-check-cert", output.ColReset)
 
 		flag.Usage()
 		os.Exit(0)
