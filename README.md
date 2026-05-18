@@ -58,18 +58,18 @@ Open http://localhost:8080 or https://localhost:8080 in your browser.
 
 ## Command Line Options
 
-| Flag | Description |
-| --- | --- |
-| -f,	-file	| Path to a local .pem, .crt, .cer, or .key file |
-| -c,	-cron |	Interactive Cron setup |
-| -dl, -download | Download valid certificates to certs folder |
-| -ls, -list |	List and manage Cron jobs |
-| -l, -log | Show cron job log file |
-| -ci,	-ci-mode | CI/CD Mode (non-interactive, uses urls.txt) |
-| -w, -web | Start web dashboard on localhost:8080 |
-| -cert | Path to SSL certificate file (.pem/.crt) |
-| -key |  Path to SSL private key file (.pem) |
-| -h,	-help |	Display help message |
+| Flag | Alias | Description |
+| --- | --- | --- |
+| -f | -file	| Path to a local .pem, .crt, .cer, or .key file |
+| -c | -cron |	Interactive Cron setup |
+| -dl | -download | Download valid certificates to certs folder |
+| -ls | -list |	List and manage Cron jobs |
+| -l | -log | Show cron job log file |
+| -ci |	-ci-mode | CI/CD Mode (non-interactive, uses urls.txt) |
+| -w | -web | Start web dashboard on localhost:8080 |
+| -cert | | Path to SSL certificate file (.pem/.crt) |
+| -key | |  Path to SSL private key file (.pem) |
+| -h | -help |	Display help message |
 
 ## Examples
 Check a single certificate:
