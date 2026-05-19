@@ -75,6 +75,8 @@ cert_dir = ~/.config/cert-checker/certs
 [settings]
 # Timeout in seconds for network checks (default: 60)
 timeout = 60
+# Default webserver port
+web_port = 8080
 `
 
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {

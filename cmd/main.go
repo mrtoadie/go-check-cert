@@ -62,6 +62,8 @@ func main() {
 		"-key":      true,
 		"-download": true, "-dl": true,
 	}
+	port := config.GetWebPort()
+
 	// pre-validation of arguments
 	for _, arg := range os.Args[1:] {
 		if strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") {
@@ -92,8 +94,8 @@ func main() {
 	helpFlag := flag.Bool("help", false, "Show help")
 	addBoolAlias(helpFlag, "h", "help", "Show help")
 
-	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:8080")
-	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:8080")
+	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:" + port)
+	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:" + port)
 
 	certFlag := flag.String("cert", "", "Path to SSL certificate file (.pem/.crt)")
 	keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
@@ -136,7 +138,7 @@ func main() {
 	}
 
 	if *webFlag {
-		web.StartServer("8080", *certFlag, *keyFlag, constants.Version)
+		web.StartServer(port, *certFlag, *keyFlag, constants.Version)
 	}
 
 	if *helpFlag {
@@ -164,7 +166,7 @@ func main() {
 		fmt.Println(output.ColBlue, "         CI/CD Mode: Non-interactive, uses urls.txt automatically", output.ColReset)
 
 		fmt.Println(output.ColYellow, " -w, -web", output.ColReset)
-		fmt.Println(output.ColBlue, "         Start web dashboard on localhost:8080", output.ColReset)
+		fmt.Println(output.ColBlue, "         Start web dashboard on localhost:8080 (default)", output.ColReset)
 
 		fmt.Println(output.ColYellow, " -cert", output.ColReset)
 		fmt.Println(output.ColBlue, "         Path to SSL certificate file (.pem/.crt)", output.ColReset)

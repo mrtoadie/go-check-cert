@@ -24,6 +24,7 @@ var (
 		CertDir     string
 		DefaultURLs []string
 		Loaded      bool
+		WebPort     string
 	}
 	once sync.Once
 )
@@ -110,6 +111,8 @@ func loadConfig() {
 					cfg.CertDir = val
 				case "default_urls":
 					cfg.DefaultURLs = parseURLs(val)
+				case "web_port":
+					cfg.WebPort = val
 				}
 			}
 		}
@@ -152,6 +155,14 @@ func GetUrlsFile() string      { loadConfig(); return cfg.UrlsFile }
 func GetLogFile() string       { loadConfig(); return cfg.LogFile }
 func GetOutputDir() string     { loadConfig(); return cfg.OutputDir }
 func GetDefaultURLs() []string { loadConfig(); return cfg.DefaultURLs }
+
+func GetWebPort() string {
+	loadConfig()
+	if cfg.WebPort == "" {
+		return "8080"
+	}
+	return cfg.WebPort
+}
 
 // InitConfig
 func InitConfig() ([]string, bool, error) {
