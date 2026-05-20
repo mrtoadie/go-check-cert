@@ -65,7 +65,7 @@ func CheckCertExpiry(target string, hostname string, timeout time.Duration) Cert
 	return checkRemoteCert(target, hostname, timeout)
 }
 
-// checkRemoteCert handles TLS connections to remote hosts.
+// checkRemoteCert handles TLS connections to remote hosts
 func checkRemoteCert(target string, hostname string, timeout time.Duration) CertInfo {
 	info := CertInfo{URL: target}
 

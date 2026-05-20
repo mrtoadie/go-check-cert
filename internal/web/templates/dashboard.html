@@ -281,6 +281,7 @@
             <th class="sortable" onclick="sortTable(3)">Days Left</th>
             <th class="sortable" onclick="sortTable(4)">Issuer</th>
             <th class="sortable" onclick="sortTable(5)">Valid Until</th>
+            <th class="sortable" onclick="sortTable(6)">Key</th>
           </tr>
         </thead>
         <tbody>
@@ -300,6 +301,7 @@
             <td>{{.DaysRemaining}}</td>
             <td>{{.Issuer}}</td>
             <td>{{.NotAfter.Format "02. Jan 2006"}}</td>
+            <td>{{.KeyAlgorithm}} {{.KeySize}}-bit</td>
           </tr>
           {{end}}
           {{end}}

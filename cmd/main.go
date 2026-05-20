@@ -1,9 +1,9 @@
-// Version 1.1.6
+// Version 1.2.1
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 		https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: May 14 2026
+// last modification: May 20 2026
 package main
 
 import (
@@ -117,6 +117,7 @@ func main() {
 	// create default ini file if not exists
 	config.EnsureDefaults()
 
+	// flags
 	if *cronFlag {
 		schedule.ScheduleMain()
 		os.Exit(0)

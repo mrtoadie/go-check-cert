@@ -138,11 +138,11 @@ func PrintResults(results []checker.CertInfo) {
 
 		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
 
-		statusLine := fmt.Sprintf("Status: %s%-10s%s", c, r.Status, ColReset)
+		statusLine := fmt.Sprintf(" Status: %s%-5s%s", c, r.Status, ColReset)
 		if !r.IsChainComplete {
-			statusLine += fmt.Sprintf(" | %s CHAIN ISSUE%s", ColRed, ColReset)
+			statusLine += fmt.Sprintf(" |%s CHAIN ISSUE%s", ColRed, ColReset)
 		} else {
-			statusLine += fmt.Sprintf(" | %s CHAIN OK%s", ColGreen, ColReset)
+			statusLine += fmt.Sprintf(" |%s CHAIN OK%s", ColGreen, ColReset)
 		}
 		fmt.Println(statusLine)
 
@@ -168,6 +168,18 @@ func PrintResults(results []checker.CertInfo) {
 		// key info
 		fmt.Printf("   Key: %s %d-bit | Sig: %s\n",
 			r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
+		if r.KeyAlgorithm == "RSA" && r.KeySize < 2048 {
+			fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+		}
+		if r.KeyAlgorithm == "RSA" && r.KeySize >= 4096 {
+			fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+		}
+		if r.KeyAlgorithm == "RSA" && r.KeySize == 2048 {
+			fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+		}
+		if r.KeyAlgorithm == "ECDSA" && r.KeySize < 256 {
+			fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+		}
 
 		// sans
 		if len(r.SANs) > 0 {
@@ -181,7 +193,7 @@ func PrintResults(results []checker.CertInfo) {
 		if r.Error != nil {
 			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
 		}
-		fmt.Printf("%s ------------------------------------%s\n", ColBlue, ColReset)
+		fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
 	}
 
 	// count statuses
@@ -195,11 +207,12 @@ func PrintResults(results []checker.CertInfo) {
 		return counts[status]
 	}
 
-	fmt.Printf("%sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
+	fmt.Printf(" %sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
 		ColGreen, count("VALID"), ColReset,
 		ColYellow, count("WARNING"), ColReset,
 		ColRed, count("EXPIRED"), ColReset,
 		ColRed, count("ERROR"), ColReset)
+	fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
 }
 
 // TruncateString shortens a string and adds "..."

@@ -78,7 +78,6 @@ timeout = 60
 # Default webserver port
 web_port = 8080
 `
-
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		fmt.Printf("%sError creating config.ini: %v%s\n", output.ColRed, err, output.ColReset)
 		return
@@ -98,7 +97,6 @@ github.com
 go.dev
 cloudflare.com
 `
-
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		fmt.Printf("%sError creating default_urls.txt: %v%s\n", output.ColRed, err, output.ColReset)
 		return
