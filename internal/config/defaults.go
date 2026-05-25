@@ -10,7 +10,6 @@ import (
 )
 
 // EnsureDefaults creates config.ini and default_urls.txt if they do not exist
-// called at the beginning of main()
 func EnsureDefaults() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -36,12 +35,7 @@ func EnsureDefaults() {
 			fmt.Printf("%sError creating %s dir: %v%s\n", output.ColRed, dir, err, output.ColReset)
 		}
 	}
-	/*
-		defaultURLsPath := filepath.Join(configDir, "default_urls.txt")
-		if _, err := os.Stat(defaultURLsPath); os.IsNotExist(err) {
-			createDefaultURLs(defaultURLsPath)
-		}
-	*/
+
 	if _, err := os.Stat(filepath.Join(configDir, "default_urls.txt")); os.IsNotExist(err) {
 		createDefaultURLs(filepath.Join(configDir, "default_urls.txt"))
 	}
@@ -97,5 +91,5 @@ cloudflare.com
 		fmt.Printf("%sError creating default_urls.txt: %v%s\n", output.ColRed, err, output.ColReset)
 		return
 	}
-	fmt.Printf("%sCreated:%s %s (Default URL source)%s\n", output.ColGreen, output.ColReset, path, output.ColReset)
+	fmt.Printf("%sCreated:%s %s (Default URL source)%s\n", output.ColGreen, output.ColReset, path)
 }

@@ -127,27 +127,6 @@ func loadConfig() {
 	})
 }
 
-/*
-func loadDefaultURLsFromFile(filePath string) ([]string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var urls []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		// skip empty lines and comments
-		if line != "" && !strings.HasPrefix(line, "#") {
-			urls = append(urls, line)
-		}
-	}
-	return urls, scanner.Err()
-}
-*/
-// public getter
 // GetTimeout returns the configured connection timeout in seconds.
 func GetTimeout() int { loadConfig(); return cfg.Timeout }
 
@@ -191,9 +170,9 @@ func GetConfigPath() (string, error) {
 // GetLogPath returns the absolute path to the cron job log file
 func GetLogPath() (string, error) {
 	loadConfig()
-	dir, err := os.UserHomeDir()
+	dir, err := configDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not find home directory: %w", err)
 	}
 	return resolvePath(cfg.LogFile, dir, "cert-check.log"), nil
 }
@@ -201,46 +180,20 @@ func GetLogPath() (string, error) {
 // GetOutputPath returns the absolute path to the JSON report directory
 func GetOutputPath() (string, error) {
 	loadConfig()
-	dir, err := os.UserHomeDir()
+	dir, err := configDir()
 	if err != nil {
 		return "", err
 	}
-	/*
-		outputDirRaw := cfg.OutputDir
-		if outputDirRaw == "" {
-			outputDirRaw = "reports"
-		}
-		if strings.HasPrefix(outputDirRaw, "~/") {
-			return filepath.Join(homeDir, strings.TrimPrefix(outputDirRaw, "~/")), nil
-		}
-		if filepath.IsAbs(outputDirRaw) {
-			return outputDirRaw, nil
-			}*/
-	//return filepath.Join(homeDir, constants.ConfigDir, outputDirRaw), nil
-	//
 	return resolvePath(cfg.OutputDir, dir, "reports"), nil
 }
 
 // GetCertPath returns the absolute path to the certificate download directory
 func GetCertPath() (string, error) {
 	loadConfig()
-	dir, err := os.UserHomeDir()
+	dir, err := configDir()
 	if err != nil {
 		return "", err
 	}
-	/*
-		certDirRaw := cfg.CertDir
-		if certDirRaw == "" {
-			certDirRaw = "certs"
-		}
-		if strings.HasPrefix(certDirRaw, "~/") {
-			return filepath.Join(homeDir, strings.TrimPrefix(certDirRaw, "~/")), nil
-		}
-		if filepath.IsAbs(certDirRaw) {
-			return certDirRaw, nil
-		}
-		return filepath.Join(homeDir, constants.ConfigDir, certDirRaw), nil
-	*/
 	return resolvePath(cfg.CertDir, dir, "certs"), nil
 }
 
