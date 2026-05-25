@@ -4,10 +4,11 @@ package constants
 import "time"
 
 const (
-	AppName    = "cert-checker"
-	Version    = "1.2.2"
-	ConfigDir  = ".config/" + AppName
-	CronMarker = "# cert-checker"
+	AppName        = "cert-checker"
+	Version        = "1.2.2"
+	ConfigDir      = ".config/" + AppName
+	CronMarker     = "# cert-checker"
+	DefaultWebPort = "8080"
 	// time format constants
 	ReportDateFormat = "20060102-150405"     // report file names
 	RFC3339Format    = time.RFC3339          // JSON timestamps

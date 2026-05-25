@@ -205,7 +205,7 @@ func main() {
 		inputType = TypeFile
 	} else {
 		// interactive mode
-		urlsFromConfig, _, err := config.InitConfig()
+		urlsFromConfig, err := config.InitConfig()
 		if err != nil {
 			fmt.Printf("%sConfiguration error: %v%s\n", output.ColRed, err, output.ColReset)
 			os.Exit(1)
@@ -374,7 +374,7 @@ func main() {
 
 func runCIMode() {
 	// load URLs from config file
-	urls, _, err := config.InitConfig()
+	urls, err := config.InitConfig()
 	if err != nil {
 		fmt.Printf("%sConfiguration error: %v%s\n", output.ColRed, err, output.ColReset)
 		os.Exit(1)

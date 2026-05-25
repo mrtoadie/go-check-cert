@@ -3,6 +3,7 @@ package config
 
 import (
 	"bufio"
+	"bytes"
 	"cert-checker/internal/constants"
 	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
@@ -22,7 +23,6 @@ var (
 		OutputDir   string
 		CertDir     string
 		DefaultURLs []string
-		Loaded      bool
 		WebPort     string
 	}
 	once sync.Once
@@ -53,33 +53,25 @@ func resolvePath(inputPath, baseDir, defaultName string) string {
 
 func loadConfig() {
 	once.Do(func() {
-		// set defaults (only as a fallback for the INI read logic, not for the path)
-		cfg.Timeout = 60 // fallback
-		cfg.Loaded = true
+		cfg.Timeout = 60 // default; overwritten if config.ini is present
 
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Printf("%sWarning: Could not find home dir: %v%s\n", output.ColYellow, err, output.ColReset)
+			fmt.Printf("%sWarning: could not find home directory: %v%s\n", output.ColYellow, err, output.ColReset)
 			return
 		}
 
 		configDir := filepath.Join(homeDir, constants.ConfigDir)
-		configIniPath := filepath.Join(configDir, "config.ini")
 
-		// load INI
-		data, err := os.ReadFile(configIniPath)
-		hasIni := true
-		if err != nil {
-			if os.IsNotExist(err) {
-				hasIni = false
-			} else {
-				fmt.Printf("%sError reading config: %v%s\n", output.ColRed, err, output.ColReset)
-				return
-			}
+		// os.ReadFile returns IsNotExist — treat that as "no config yet", not an error
+		data, err := os.ReadFile(filepath.Join(configDir, "config.ini"))
+		if err != nil && !os.IsNotExist(err) {
+			fmt.Printf("%sError reading config.ini: %v%s\n", output.ColRed, err, output.ColReset)
+			return
 		}
 
-		if hasIni {
-			scanner := bufio.NewScanner(strings.NewReader(string(data)))
+		if len(data) > 0 {
+			scanner := bufio.NewScanner(bytes.NewReader(data))
 			for scanner.Scan() {
 				line := strings.TrimSpace(scanner.Text())
 				if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") ||
@@ -97,7 +89,8 @@ func loadConfig() {
 
 				switch key {
 				case "timeout":
-					if t, err := strconv.Atoi(val); err == nil {
+					// validate: must be a positive integer
+					if t, err := strconv.Atoi(val); err == nil && t > 0 {
 						cfg.Timeout = t
 					}
 				case "urls_file":
@@ -111,168 +104,207 @@ func loadConfig() {
 				case "default_urls":
 					cfg.DefaultURLs = parseURLs(val)
 				case "web_port":
-					cfg.WebPort = val
+					if p, err := strconv.Atoi(val); err == nil && p >= 1 && p <= 65535 {
+						cfg.WebPort = val
+					}
 				}
 			}
 		}
 
-		// fallback: load default_urls.txt (only if INI has not set anything)
+		// fallback: read default_urls.txt if default_urls was not set in the INI.
 		if len(cfg.DefaultURLs) == 0 {
-			defaultURLsPath := filepath.Join(configDir, "default_urls.txt")
-			if _, err := os.Stat(defaultURLsPath); err == nil {
-				cfg.DefaultURLs = loadDefaultURLsFromFile(defaultURLsPath)
+			urls, err := parser.ReadURLsFromFile(filepath.Join(configDir, "default_urls.txt"))
+			if err != nil && !os.IsNotExist(err) {
+				fmt.Printf("%sWarning: could not read default_urls.txt: %v%s\n", output.ColYellow, err, output.ColReset)
 			}
+			cfg.DefaultURLs = urls
 		}
 
-		// fallback: hardcoded URLs (only if there is nothing there)
+		// last-resort hardcoded fallback
 		if len(cfg.DefaultURLs) == 0 {
 			cfg.DefaultURLs = []string{"archlinux.org", "github.com", "go.dev"}
 		}
 	})
 }
 
-func loadDefaultURLsFromFile(filePath string) []string {
-	var urls []string
+/*
+func loadDefaultURLsFromFile(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer file.Close()
+
+	var urls []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+		// skip empty lines and comments
 		if line != "" && !strings.HasPrefix(line, "#") {
 			urls = append(urls, line)
 		}
 	}
-	return urls
+	return urls, scanner.Err()
 }
-
+*/
 // public getter
-func GetTimeout() int          { loadConfig(); return cfg.Timeout }
-func GetUrlsFile() string      { loadConfig(); return cfg.UrlsFile }
-func GetLogFile() string       { loadConfig(); return cfg.LogFile }
-func GetOutputDir() string     { loadConfig(); return cfg.OutputDir }
+// GetTimeout returns the configured connection timeout in seconds.
+func GetTimeout() int { loadConfig(); return cfg.Timeout }
+
+// GetDefaultURLs returns the list of default URLs from configuration.
 func GetDefaultURLs() []string { loadConfig(); return cfg.DefaultURLs }
 
+func GetUrlsFile() string  { loadConfig(); return cfg.UrlsFile }
+func GetLogFile() string   { loadConfig(); return cfg.LogFile }
+func GetOutputDir() string { loadConfig(); return cfg.OutputDir }
+
+// GetWebPort returns the configured web dashboard port.
+// Falls back to defaultWebPort ("8080") if not set.
 func GetWebPort() string {
 	loadConfig()
 	if cfg.WebPort == "" {
-		return "8080"
+		return constants.DefaultWebPort
 	}
 	return cfg.WebPort
 }
 
-// InitConfig
-func InitConfig() ([]string, bool, error) {
-	loadConfig()
+// configDir is a small helper to avoid repeating the homeDir+ConfigDir join
+// in every path getter.
+func configDir() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, false, fmt.Errorf("could not find home directory: %w", err)
+		return "", fmt.Errorf("could not find home directory: %w", err)
 	}
+	return filepath.Join(homeDir, constants.ConfigDir), nil
+}
 
-	configDir := filepath.Join(homeDir, constants.ConfigDir)
-
-	urlsFile := GetUrlsFile()
-	finalUrlPath := resolvePath(urlsFile, configDir, "urls.txt")
-
-	if err := os.MkdirAll(filepath.Dir(finalUrlPath), 0755); err != nil {
-		return nil, false, fmt.Errorf("could not create config directory: %w", err)
-	}
-
-	if _, err := os.Stat(finalUrlPath); err == nil {
-		urls, err := parser.ReadURLsFromFile(finalUrlPath)
-		if err != nil {
-			return nil, false, fmt.Errorf("error reading URL file %s: %w", finalUrlPath, err)
-		}
-		return urls, false, nil
-	}
-
-	fmt.Printf("%sFirst run: Creating configuration file at %s...%s\n", output.ColBlue, finalUrlPath, output.ColReset)
-	file, err := os.Create(finalUrlPath)
+// GetConfigPath returns the absolute path to the URL list file
+func GetConfigPath() (string, error) {
+	loadConfig()
+	dir, err := configDir()
 	if err != nil {
-		return nil, false, fmt.Errorf("could not create URL file: %w", err)
+		return "", err
+	}
+	return resolvePath(cfg.UrlsFile, dir, "urls.txt"), nil
+}
+
+// GetLogPath returns the absolute path to the cron job log file
+func GetLogPath() (string, error) {
+	loadConfig()
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return resolvePath(cfg.LogFile, dir, "cert-check.log"), nil
+}
+
+// GetOutputPath returns the absolute path to the JSON report directory
+func GetOutputPath() (string, error) {
+	loadConfig()
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	/*
+		outputDirRaw := cfg.OutputDir
+		if outputDirRaw == "" {
+			outputDirRaw = "reports"
+		}
+		if strings.HasPrefix(outputDirRaw, "~/") {
+			return filepath.Join(homeDir, strings.TrimPrefix(outputDirRaw, "~/")), nil
+		}
+		if filepath.IsAbs(outputDirRaw) {
+			return outputDirRaw, nil
+			}*/
+	//return filepath.Join(homeDir, constants.ConfigDir, outputDirRaw), nil
+	//
+	return resolvePath(cfg.OutputDir, dir, "reports"), nil
+}
+
+// GetCertPath returns the absolute path to the certificate download directory
+func GetCertPath() (string, error) {
+	loadConfig()
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	/*
+		certDirRaw := cfg.CertDir
+		if certDirRaw == "" {
+			certDirRaw = "certs"
+		}
+		if strings.HasPrefix(certDirRaw, "~/") {
+			return filepath.Join(homeDir, strings.TrimPrefix(certDirRaw, "~/")), nil
+		}
+		if filepath.IsAbs(certDirRaw) {
+			return certDirRaw, nil
+		}
+		return filepath.Join(homeDir, constants.ConfigDir, certDirRaw), nil
+	*/
+	return resolvePath(cfg.CertDir, dir, "certs"), nil
+}
+
+// InitConfig loads the URL list from the configured path
+func InitConfig() ([]string, error) {
+	loadConfig()
+	dir, err := configDir()
+	if err != nil {
+		return nil, err
+	}
+
+	finalURLPath := resolvePath(cfg.UrlsFile, dir, "urls.txt")
+
+	if err := os.MkdirAll(filepath.Dir(finalURLPath), 0755); err != nil {
+		return nil, fmt.Errorf("could not create config directory: %w", err)
+	}
+
+	_, statErr := os.Stat(finalURLPath)
+	if statErr != nil && !os.IsNotExist(statErr) {
+		// permission denied or similar — not a "file missing" situation
+		return nil, fmt.Errorf("could not stat URL file %s: %w", finalURLPath, statErr)
+	}
+
+	if statErr == nil {
+		// file exists — read it
+		urls, err := parser.ReadURLsFromFile(finalURLPath)
+		if err != nil {
+			return nil, fmt.Errorf("error reading URL file %s: %w", finalURLPath, err)
+		}
+		return urls, nil
+	}
+
+	// first run: create the file
+	fmt.Printf("%sFirst run: creating URL list at %s%s\n", output.ColBlue, finalURLPath, output.ColReset)
+	file, err := os.Create(finalURLPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not create URL file: %w", err)
 	}
 	defer file.Close()
 
+	// bufio.Writer + explicit Flush — replaces the silent WriteString loop
 	defaultURLs := GetDefaultURLs()
-	for _, url := range defaultURLs {
-		file.WriteString(url + "\n")
+	w := bufio.NewWriter(file)
+	for _, u := range defaultURLs {
+		if _, err := fmt.Fprintf(w, "%s\n", u); err != nil {
+			return nil, fmt.Errorf("could not write URL file: %w", err)
+		}
+	}
+	if err := w.Flush(); err != nil {
+		return nil, fmt.Errorf("could not flush URL file: %w", err)
 	}
 
-	fmt.Printf("%sCreated:%s %s\n", output.ColGreen, output.ColReset, finalUrlPath)
+	fmt.Printf("%sCreated:%s %s\n", output.ColGreen, output.ColReset, finalURLPath)
 	fmt.Printf("%sTip:%s Edit this file to add your own URLs.\n\n", output.ColYellow, output.ColReset)
 
-	return defaultURLs, true, nil
+	return defaultURLs, nil
 }
 
 func parseURLs(s string) []string {
 	var urls []string
-	parts := strings.Split(s, ",")
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
 			urls = append(urls, p)
 		}
 	}
 	return urls
-}
-
-// wrapper
-func GetConfigPath() (string, error) {
-	loadConfig()
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("cloud not finde home directory: %w", err)
-	}
-	configDir := filepath.Join(homeDir, constants.ConfigDir)
-	return resolvePath(cfg.UrlsFile, configDir, "urls.txt"), nil
-}
-
-func GetLogPath() (string, error) {
-	loadConfig()
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("cloud not finde home directory: %w", err)
-	}
-	configDir := filepath.Join(homeDir, constants.ConfigDir)
-	return resolvePath(cfg.LogFile, configDir, "cert-check.log"), nil
-}
-
-func GetOutputPath() (string, error) {
-	loadConfig()
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("cloud not finde home directory: %w", err)
-	}
-	outputDirRaw := cfg.OutputDir
-	if outputDirRaw == "" {
-		outputDirRaw = "reports"
-	}
-	if strings.HasPrefix(outputDirRaw, "~/") {
-		return filepath.Join(homeDir, strings.TrimPrefix(outputDirRaw, "~/")), nil
-	}
-	if filepath.IsAbs(outputDirRaw) {
-		return outputDirRaw, nil
-	}
-	return filepath.Join(homeDir, constants.ConfigDir, outputDirRaw), nil
-}
-
-func GetCertPath() (string, error) {
-	loadConfig()
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("cloud not finde home directory: %w", err)
-	}
-	certDirRaw := cfg.CertDir
-	if certDirRaw == "" {
-		certDirRaw = "certs"
-	}
-	if strings.HasPrefix(certDirRaw, "~/") {
-		return filepath.Join(homeDir, strings.TrimPrefix(certDirRaw, "~/")), nil
-	}
-	if filepath.IsAbs(certDirRaw) {
-		return certDirRaw, nil
-	}
-	return filepath.Join(homeDir, constants.ConfigDir, certDirRaw), nil
 }

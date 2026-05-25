@@ -2,16 +2,15 @@
 package config
 
 import (
+	"cert-checker/internal/constants"
+	"cert-checker/internal/output"
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"cert-checker/internal/constants"
-	"cert-checker/internal/output"
 )
 
-// EnsureDefaults creates config.ini and default_urls.txt if they do not exist.
-// called at the beginning of main().
+// EnsureDefaults creates config.ini and default_urls.txt if they do not exist
+// called at the beginning of main()
 func EnsureDefaults() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -29,68 +28,59 @@ func EnsureDefaults() {
 	if _, err := os.Stat(configIniPath); os.IsNotExist(err) {
 		createConfigIni(configIniPath)
 	}
-	/*
-		logsDir := filepath.Join(configDir, "logs")
-		if err := os.MkdirAll(logsDir, 0755); err != nil {
-			fmt.Printf("%sError creating logs dir: %v%s\n", output.ColRed, err, output.ColReset)
-			return
-		}
 
-		reportsDir := filepath.Join(configDir, "reports")
-		if err := os.MkdirAll(reportsDir, 0755); err != nil {
-			fmt.Printf("%sError creating reports dir: %v%s\n", output.ColRed, err, output.ColReset)
-			return
-		}
-
-		certsDir := filepath.Join(configDir, "certs")
-		if err := os.MkdirAll(certsDir, 0755); err != nil {
-			fmt.Printf("%sError creating certs dir: %v%s\n", output.ColRed, err, output.ColReset)
-			return
-		}
-	*/
+	// create sub-directories independently — a failure on one does not
+	// prevent the others from being created (previously used early returns)
 	for _, dir := range []string{"logs", "reports", "certs"} {
 		if err := os.MkdirAll(filepath.Join(configDir, dir), 0755); err != nil {
 			fmt.Printf("%sError creating %s dir: %v%s\n", output.ColRed, dir, err, output.ColReset)
 		}
 	}
-
-	defaultURLsPath := filepath.Join(configDir, "default_urls.txt")
-	if _, err := os.Stat(defaultURLsPath); os.IsNotExist(err) {
-		createDefaultURLs(defaultURLsPath)
+	/*
+		defaultURLsPath := filepath.Join(configDir, "default_urls.txt")
+		if _, err := os.Stat(defaultURLsPath); os.IsNotExist(err) {
+			createDefaultURLs(defaultURLsPath)
+		}
+	*/
+	if _, err := os.Stat(filepath.Join(configDir, "default_urls.txt")); os.IsNotExist(err) {
+		createDefaultURLs(filepath.Join(configDir, "default_urls.txt"))
 	}
 }
 
 func createConfigIni(path string) {
-	content := `# cert-checker Configuration File
+	// base is built from the constant so the template stays in sync if ConfigDir changes
+	base := "~/" + constants.ConfigDir
+	content := fmt.Sprintf(`# cert-checker Configuration File
 # Created automatically on first run
 # Lines starting with '#' are comments
 
 [paths]
-# Path to URL list (supports ~, /or relative path)
-urls_file = ~/.config/cert-checker/default_urls.txt
+# Path to URL list (supports ~/, absolute, or relative path)
+urls_file = %s/default_urls.txt
 
 # Path to the log file
-log_file = ~/.config/cert-checker/logs/cert-check.log
+log_file = %s/logs/cert-check.log
 
 # Directory for JSON reports
-report_dir = ~/.config/cert-checker/reports
+report_dir = %s/reports
 
 # Directory for certificate files
-cert_dir = ~/.config/cert-checker/certs
+cert_dir = %s/certs
 
 [settings]
 # Timeout in seconds for network checks (default: 60)
 timeout = 60
-# Default webserver port
-web_port = 8080
-`
+# Web dashboard port (default: %s)
+web_port = %s
+`, base, base, base, base, constants.DefaultWebPort, constants.DefaultWebPort)
+
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		fmt.Printf("%sError creating config.ini: %v%s\n", output.ColRed, err, output.ColReset)
 		return
 	}
-
 	fmt.Printf("%sCreated:%s %s\n", output.ColGreen, output.ColReset, path)
-	fmt.Printf("%sTip:%s Edit this file to customize settings.%s\n\n", output.ColYellow, output.ColReset, output.ColReset)
+	fmt.Printf("%sTip:%s Edit this file to customize settings.\n\n", output.ColYellow, output.ColReset)
+	// removed redundant trailing ColReset
 }
 
 func createDefaultURLs(path string) {
