@@ -5,7 +5,7 @@ import "time"
 
 const (
 	AppName    = "cert-checker"
-	Version    = "1.2"
+	Version    = "1.2.2"
 	ConfigDir  = ".config/" + AppName
 	CronMarker = "# cert-checker"
 	// time format constants

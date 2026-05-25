@@ -1,554 +1,870 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | cert-checker v{{.Version}}</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232c3e50'/><path d='M50 20 L80 50 L50 80 L20 50 Z' fill='white'/><circle cx='50' cy='50' r='15' fill='%232c3e50'/></svg>">
-  <!-- CSS-STYLES -->
-  <style>
-    /* CSS vars */
-    :root {
-        --bg-color: #f4f6f8;
-        --container-bg: #ffffff;
-        --text-color: #333333;
-        --heading-color: #2c3e50;
-        --border-color: #eeeeee;
-        --table-header-bg: #f8f9fa;
-        --table-hover-bg: #e9ecef;
-        --footer-color: #6c757d;
-        --shadow: 0 4px 6px rgba(0,0,0,0.05);
-        --shadow-hover: 0 6px 12px rgba(0,0,0,0.1);
-        --radius: 10px;
-        /* error box */
-        --error-bg: #fff3cd;
-        --error-text: #856404;
-        --error-border: #ffc107;
-        /* status colors */
-        --color-ok: #28a745;
-        --color-warn: #ffc107;
-        --color-exp: #dc3545;
-        --color-err: #6c757d;
-        --color-primary: #007bff;  
-    }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dashboard | cert-checker v{{.Version}}</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232c3e50'/><path d='M50 20 L80 50 L50 80 L20 50 Z' fill='white'/><circle cx='50' cy='50' r='15' fill='%232c3e50'/></svg>"
+        />
+        <!-- CSS-STYLES -->
+        <style>
+            /* CSS vars */
+            :root {
+                --bg-color: #f4f6f8;
+                --container-bg: #ffffff;
+                --text-color: #333333;
+                --heading-color: #2c3e50;
+                --border-color: #eeeeee;
+                --table-header-bg: #f8f9fa;
+                --table-hover-bg: #e9ecef;
+                --footer-color: #6c757d;
+                --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                --shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.1);
+                --radius: 10px;
+                /* error box */
+                --error-bg: #fff3cd;
+                --error-text: #856404;
+                --error-border: #ffc107;
+                /* status colors */
+                --color-ok: #28a745;
+                --color-warn: #ffc107;
+                --color-exp: #dc3545;
+                --color-err: #6c757d;
+                --color-primary: #007bff;
+            }
 
-    body.dark-mode {
-        --bg-color: #1a1a2e;
-        --container-bg: #16213e;
-        --text-color: #e0e0e0;
-        --heading-color: #ffffff;
-        --border-color: #2a2a4a;
-        --table-header-bg: #0f3460;
-        --table-hover-bg: #1f4068;
-        --footer-color: #a0a0a0;
-        --shadow: 0 4px 6px rgba(0,0,0,0.3);
-        --shadow-hover: 0 6px 12px rgba(0,0,0,0.5);
-        /* error box */
-        --error-bg: #3d2b1f;
-        --error-text: #ffc107;
-        --error-border: #ffc107;
-    }
-    * { box-sizing: border-box; }
-    
-    body { 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        background: var(--bg-color); 
-        padding: 20px; 
-        color: var(--text-color); 
-        transition: background 0.3s ease, color 0.3s ease; 
-        margin: 0;
-    }
+            body.dark-mode {
+                --bg-color: #1a1a2e;
+                --container-bg: #16213e;
+                --text-color: #e0e0e0;
+                --heading-color: #ffffff;
+                --border-color: #2a2a4a;
+                --table-header-bg: #0f3460;
+                --table-hover-bg: #1f4068;
+                --footer-color: #a0a0a0;
+                --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                --shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.5);
+                /* error box */
+                --error-bg: #3d2b1f;
+                --error-text: #ffc107;
+                --error-border: #ffc107;
+            }
+            * {
+                box-sizing: border-box;
+            }
 
-    .container { 
-        max-width: 1200px; 
-        margin: 0 auto; 
-        background: var(--container-bg); 
-        padding: 30px; 
-        border-radius: var(--radius);
-        box-shadow: var(--shadow); 
-        transition: background 0.3s ease, box-shadow 0.3s ease; 
-        position: relative;
-    }
-    /* typo & header */
-    h1 { 
-        color: var(--heading-color); 
-        margin-bottom: 30px; 
-        font-size: 2rem; 
-        display: flex; 
-        align-items: center; 
-        justify-content: space-between; 
-        gap: 15px; 
-        flex-wrap: wrap;
-    }
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Helvetica, Arial, sans-serif;
+                background: var(--bg-color);
+                padding: 20px;
+                color: var(--text-color);
+                transition:
+                    background 0.3s ease,
+                    color 0.3s ease;
+                margin: 0;
+            }
 
-    .logo-icon { 
-        width: 48px; 
-        height: 48px; 
-        background: linear-gradient(135deg, #2c3e50, #3498db); 
-        border-radius: 12px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        color: white; 
-        font-size: 24px; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
-    }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: var(--container-bg);
+                padding: 30px;
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                transition:
+                    background 0.3s ease,
+                    box-shadow 0.3s ease;
+                position: relative;
+            }
+            /* typo & header */
+            h1 {
+                color: var(--heading-color);
+                margin-bottom: 30px;
+                font-size: 2rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
 
-    .subtitle { 
-        font-size: 0.95rem; 
-        color: var(--footer-color); 
-        font-style: italic; 
-        font-weight: 500; 
-        margin-top: -10px; 
-        margin-bottom: 25px; 
-        opacity: 0.8; 
-        text-align: center;
-        width: 100%;
-    }
-    /* buttons & interactive elements */
-    .theme-toggle, .filter-btn, .settings-btn, .manual-refresh-btn, #pauseResumeBtn, .settings-item select {
-        transition: all 0.2s ease;
-        cursor: pointer;
-        border: 1px solid var(--border-color);
-        background: var(--table-header-bg);
-        color: var(--text-color);
-        font-weight: 600;
-    }
-    .theme-toggle { padding: 8px 16px; border-radius: var(--radius); display: flex; align-items: center; gap: 8px; background: transparent; }
-    .theme-toggle:hover { background: var(--text-color); color: var(--bg-color); border-color: var(--text-color); }
-    .settings-btn { font-size: 1.5rem; padding: 8px; border-radius: 50%; background: transparent; border: none; }
-    .settings-btn:hover { background: var(--table-hover-bg); }
-    /* stats buttons */
-    .stats { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
-    .card { 
-        flex: 1; 
-        min-width: 140px; 
-        max-width: 220px;
-        padding: 20px; 
-        border-radius: var(--radius); 
-        text-align: center; 
-        color: white; 
-        font-weight: bold; 
-        font-size: 1.2rem; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-        transition: transform 0.2s;
-    }
-    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
-    
-    .bg-ok { background: linear-gradient(135deg, var(--color-ok), #218838); }
-    .bg-warn { background: linear-gradient(135deg, var(--color-warn), #e0a800); color: #333; }
-    .bg-exp { background: linear-gradient(135deg, var(--color-exp), #c82333); }
-    .bg-err { background: linear-gradient(135deg, var(--color-err), #5a6268); }
-    /* filter buttons */
-    .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
-    .filter-btn { padding: 8px 16px; border-radius: var(--radius); font-size: 0.9rem; background: var(--table-header-bg); }
-    .filter-btn:hover { background: var(--color-primary); color: white; border-color: var(--color-primary); transform: translateY(-1px); }
-    .filter-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3); }
-    /* settings menu */
-    .settings-dropdown {
-        display: none;
-        position: absolute;
-        top: 55px;
-        right: 0;
-        background: var(--container-bg);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        min-width: 220px;
-        z-index: 100;
-        padding: 15px;
-    }
-    .settings-dropdown.active { display: block; }
-    .settings-item { margin-bottom: 12px; }
-    .settings-item:last-child { margin-bottom: 0; }
-    .settings-item label { display: block; font-size: 0.85rem; color: var(--footer-color); margin-bottom: 6px; }    
-    .settings-item select { width: 100%; padding: 8px; border-radius: 8px; background: var(--bg-color); font-size: 0.9rem; }
-    .manual-refresh-btn, #pauseResumeBtn { width: 100%; padding: 10px; border-radius: 8px; font-size: 0.9rem; border: none; }
-    .manual-refresh-btn { background: var(--color-primary); color: white; }
-    .manual-refresh-btn:hover { background: #0056b3; }
-    #pauseResumeBtn { background: var(--table-header-bg); color: var(--text-color); }
-    #pauseResumeBtn:hover { background: var(--table-hover-bg); }
-    /* search bar */
-    #searchInput {
-        width: 100%;
-        max-width: 500px;
-        padding: 12px 20px;
-        border-radius: var(--radius);
-        border: 1px solid var(--border-color);
-        background: var(--container-bg);
-        color: var(--text-color);
-        font-size: 1rem;
-        outline: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    #searchInput:focus { border-color: var(--color-primary); box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2); }
-    /* table */
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.95rem; }
-    th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border-color); }
-    th { background: var(--table-header-bg); color: var(--text-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-    tr:hover { background-color: var(--table-hover-bg); }
-    /* table sort buttons */
-    th.sortable { cursor: pointer; position: relative; padding-right: 25px !important; }
-    th.sortable:hover { color: var(--color-primary); }
-    th.sortable::after { content: '⇅'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); opacity: 0.5; font-size: 0.8rem; }
-    th.sortable.asc::after { content: '↑'; opacity: 1; color: var(--color-primary); }
-    th.sortable.desc::after { content: '↓'; opacity: 1; color: var(--color-primary); }
-    .status-cell { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-    .icon-ok { color: var(--color-ok); }
-    .icon-warn { color: var(--color-warn); }
-    .icon-exp { color: var(--color-exp); }
-    .icon-err { color: var(--color-err); }
-    /* error box */
-    .error-box { background: var(--error-bg); color: var(--error-text); padding: 15px; border-radius: 6px; border-left: 5px solid var(--error-border); margin-bottom: 20px; }
-    /* footer */
-    .footer { margin-top: 30px; color: var(--footer-color); font-size: 0.9rem; text-align: center; }
-</style>
-</head>
-<body>
-    <div class="container">
-      <h1>
-        <div class="logo-icon">🔒</div>
-        <span>Certificate Dashboard</span>						
-        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">
-          <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
-        </button>
-      </h1>
-			<div class="subtitle">Stay secure, stay informed</div>  
-      {{if .ErrorMessage}}
-      <div class="error-box"><strong>⚠️ {{.ErrorMessage}}</strong></div>
-      {{else}}  
-      <!-- stats buttons -->
-      <div class="stats">
-        <div class="card bg-ok">Valid: {{.OK}}</div>
-        <div class="card bg-warn">Warning: {{.Warn}}</div>
-        <div class="card bg-exp">Expired: {{.Exp}}</div>
-        <div class="card bg-err">Errors: {{.Err}}</div>
-      </div>
-      <!-- filter buttons -->
-      <div class="filter-buttons">
-        <button class="filter-btn active" onclick="filterTable('all')">All</button>
-        <button class="filter-btn" onclick="filterTable('VALID')">✅ Valid</button>
-        <button class="filter-btn" onclick="filterTable('WARNING')">⚠️ Warning</button>
-        <button class="filter-btn" onclick="filterTable('EXPIRED')">❌ Expired</button>
-        <button class="filter-btn" onclick="filterTable('ERROR')">⚡ Error</button>
-      </div>
-			<!-- settings menu -->
-      <div style="position: absolute; top: 20px; right: 20px;">
-        <button id="settingsBtn" class="settings-btn" onclick="toggleSettingsMenu()">
-          ⚙️
-        </button>
-        <div id="settingsMenu" class="settings-dropdown">
-          <div class="settings-item">
-            <label for="refreshInterval">Auto-Refresh:</label>
-            <select id="refreshInterval" onchange="changeRefreshInterval(this.value)">
-              <option value="30">30s</option>
-              <option value="60" selected>60s</option>
-              <option value="120">2m</option>
-              <option value="300">5m</option>
-              <option value="0">Off</option>
-            </select>
-          </div>
-          <div class="settings-item">
-            <button onclick="toggleAutoRefreshManual()" id="pauseResumeBtn" style="width: 100%;">
-              ⏸️ Pause Auto-Refresh
-            </button>
-          </div>
-          <div class="settings-item">
-            <button onclick="location.reload()" class="manual-refresh-btn">
-              🔄 Manuell Refresh
-            </button>
-          </div>
+            .logo-icon {
+                width: 48px;
+                height: 48px;
+                background: linear-gradient(135deg, #2c3e50, #3498db);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 24px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            .subtitle {
+                font-size: 0.95rem;
+                color: var(--footer-color);
+                font-style: italic;
+                font-weight: 500;
+                margin-top: -10px;
+                margin-bottom: 25px;
+                opacity: 0.8;
+                text-align: center;
+                width: 100%;
+            }
+            /* buttons & interactive elements */
+            .theme-toggle,
+            .filter-btn,
+            .settings-btn,
+            .manual-refresh-btn,
+            #pauseResumeBtn,
+            .settings-item select {
+                transition: all 0.2s ease;
+                cursor: pointer;
+                border: 1px solid var(--border-color);
+                background: var(--table-header-bg);
+                color: var(--text-color);
+                font-weight: 600;
+            }
+            .theme-toggle {
+                padding: 8px 16px;
+                border-radius: var(--radius);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: transparent;
+            }
+            .theme-toggle:hover {
+                background: var(--text-color);
+                color: var(--bg-color);
+                border-color: var(--text-color);
+            }
+            .settings-btn {
+                font-size: 1.5rem;
+                padding: 8px;
+                border-radius: 50%;
+                background: transparent;
+                border: none;
+            }
+            .settings-btn:hover {
+                background: var(--table-hover-bg);
+            }
+            /* stats buttons */
+            .stats {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 30px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .card {
+                flex: 1;
+                min-width: 140px;
+                max-width: 220px;
+                padding: 20px;
+                border-radius: var(--radius);
+                text-align: center;
+                color: white;
+                font-weight: bold;
+                font-size: 1.2rem;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s;
+            }
+            .card:hover {
+                transform: translateY(-3px);
+                box-shadow: var(--shadow-hover);
+            }
+
+            .bg-ok {
+                background: linear-gradient(135deg, var(--color-ok), #218838);
+            }
+            .bg-warn {
+                background: linear-gradient(135deg, var(--color-warn), #e0a800);
+                color: #333;
+            }
+            .bg-exp {
+                background: linear-gradient(135deg, var(--color-exp), #c82333);
+            }
+            .bg-err {
+                background: linear-gradient(135deg, var(--color-err), #5a6268);
+            }
+            /* filter buttons */
+            .filter-buttons {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .filter-btn {
+                padding: 8px 16px;
+                border-radius: var(--radius);
+                font-size: 0.9rem;
+                background: var(--table-header-bg);
+            }
+            .filter-btn:hover {
+                background: var(--color-primary);
+                color: white;
+                border-color: var(--color-primary);
+                transform: translateY(-1px);
+            }
+            .filter-btn.active {
+                background: var(--color-primary);
+                color: white;
+                border-color: var(--color-primary);
+                box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+            }
+            /* settings menu */
+            .settings-dropdown {
+                display: none;
+                position: absolute;
+                top: 55px;
+                right: 0;
+                background: var(--container-bg);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                min-width: 220px;
+                z-index: 100;
+                padding: 15px;
+            }
+            .settings-dropdown.active {
+                display: block;
+            }
+            .settings-item {
+                margin-bottom: 12px;
+            }
+            .settings-item:last-child {
+                margin-bottom: 0;
+            }
+            .settings-item label {
+                display: block;
+                font-size: 0.85rem;
+                color: var(--footer-color);
+                margin-bottom: 6px;
+            }
+            .settings-item select {
+                width: 100%;
+                padding: 8px;
+                border-radius: 8px;
+                background: var(--bg-color);
+                font-size: 0.9rem;
+            }
+            .manual-refresh-btn,
+            #pauseResumeBtn {
+                width: 100%;
+                padding: 10px;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                border: none;
+            }
+            .manual-refresh-btn {
+                background: var(--color-primary);
+                color: white;
+            }
+            .manual-refresh-btn:hover {
+                background: #0056b3;
+            }
+            #pauseResumeBtn {
+                background: var(--table-header-bg);
+                color: var(--text-color);
+            }
+            #pauseResumeBtn:hover {
+                background: var(--table-hover-bg);
+            }
+            /* search bar */
+            #searchInput {
+                width: 100%;
+                max-width: 500px;
+                padding: 12px 20px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border-color);
+                background: var(--container-bg);
+                color: var(--text-color);
+                font-size: 1rem;
+                outline: none;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                transition:
+                    border-color 0.2s,
+                    box-shadow 0.2s;
+            }
+            #searchInput:focus {
+                border-color: var(--color-primary);
+                box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+            }
+            /* table */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+                font-size: 0.95rem;
+            }
+            th,
+            td {
+                padding: 14px;
+                text-align: left;
+                border-bottom: 1px solid var(--border-color);
+            }
+            th {
+                background: var(--table-header-bg);
+                color: var(--text-color);
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.85rem;
+                letter-spacing: 0.5px;
+            }
+            tr:hover {
+                background-color: var(--table-hover-bg);
+            }
+            /* table sort buttons */
+            th.sortable {
+                cursor: pointer;
+                position: relative;
+                padding-right: 25px !important;
+            }
+            th.sortable:hover {
+                color: var(--color-primary);
+            }
+            th.sortable::after {
+                content: "⇅";
+                position: absolute;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                opacity: 0.5;
+                font-size: 0.8rem;
+            }
+            th.sortable.asc::after {
+                content: "↑";
+                opacity: 1;
+                color: var(--color-primary);
+            }
+            th.sortable.desc::after {
+                content: "↓";
+                opacity: 1;
+                color: var(--color-primary);
+            }
+            .status-cell {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 700;
+            }
+            .icon-ok {
+                color: var(--color-ok);
+            }
+            .icon-warn {
+                color: var(--color-warn);
+            }
+            .icon-exp {
+                color: var(--color-exp);
+            }
+            .icon-err {
+                color: var(--color-err);
+            }
+            /* error box */
+            .error-box {
+                background: var(--error-bg);
+                color: var(--error-text);
+                padding: 15px;
+                border-radius: 6px;
+                border-left: 5px solid var(--error-border);
+                margin-bottom: 20px;
+            }
+            /* footer */
+            .footer {
+                margin-top: 30px;
+                color: var(--footer-color);
+                font-size: 0.9rem;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>
+                <div class="logo-icon">🔒</div>
+                <span>Certificate Dashboard</span>
+                <button
+                    id="themeToggle"
+                    class="theme-toggle"
+                    onclick="toggleTheme()"
+                >
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText">Dark Mode</span>
+                </button>
+            </h1>
+            <div class="subtitle">Stay secure, stay informed</div>
+            {{if .ErrorMessage}}
+            <div class="error-box"><strong>⚠️ {{.ErrorMessage}}</strong></div>
+            {{else}}
+            <!-- stats buttons -->
+            <div class="stats">
+                <div class="card bg-ok">Valid: {{.OK}}</div>
+                <div class="card bg-warn">Warning: {{.Warn}}</div>
+                <div class="card bg-exp">Expired: {{.Exp}}</div>
+                <div class="card bg-err">Errors: {{.Err}}</div>
+            </div>
+            <!-- filter buttons -->
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterTable('all')">
+                    All
+                </button>
+                <button class="filter-btn" onclick="filterTable('VALID')">
+                    ✅ Valid
+                </button>
+                <button class="filter-btn" onclick="filterTable('WARNING')">
+                    ⚠️ Warning
+                </button>
+                <button class="filter-btn" onclick="filterTable('EXPIRED')">
+                    ❌ Expired
+                </button>
+                <button class="filter-btn" onclick="filterTable('ERROR')">
+                    ⚡ Error
+                </button>
+            </div>
+            <!-- settings menu -->
+            <div style="position: absolute; top: 20px; right: 20px">
+                <button
+                    id="settingsBtn"
+                    class="settings-btn"
+                    onclick="toggleSettingsMenu()"
+                >
+                    ⚙️
+                </button>
+                <div id="settingsMenu" class="settings-dropdown">
+                    <div class="settings-item">
+                        <label for="refreshInterval">Auto-Refresh:</label>
+                        <select
+                            id="refreshInterval"
+                            onchange="changeRefreshInterval(this.value)"
+                        >
+                            <option value="30">30s</option>
+                            <option value="60" selected>60s</option>
+                            <option value="120">2m</option>
+                            <option value="300">5m</option>
+                            <option value="0">Off</option>
+                        </select>
+                    </div>
+                    <div class="settings-item">
+                        <button
+                            onclick="toggleAutoRefreshManual()"
+                            id="pauseResumeBtn"
+                            style="width: 100%"
+                        >
+                            ⏸️ Pause Auto-Refresh
+                        </button>
+                    </div>
+                    <div class="settings-item">
+                        <button
+                            onclick="location.reload()"
+                            class="manual-refresh-btn"
+                        >
+                            🔄 Manuell Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- search bar -->
+            <div
+                style="
+                    margin-bottom: 20px;
+                    display: flex;
+                    justify-content: center;
+                "
+            >
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="🔍 Search by domain, issuer or status..."
+                    onkeyup="filterSearch()"
+                />
+            </div>
+            <div
+                style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                "
+            >
+                <span
+                    style="
+                        font-size: 0.85rem;
+                        color: var(--footer-color);
+                        font-weight: normal;
+                        margin-top: 2px;
+                    "
+                >
+                    {{len .Results}} Domain{{if ne (len .Results) 1}}s{{end}}
+                    monitored
+                </span>
+            </div>
+
+            <table id="certTable">
+                <thead>
+                    <tr>
+                        <th
+                            style="width: 40px; text-align: center"
+                            class="sortable"
+                            onclick="sortTable(0)"
+                        >
+                            #
+                        </th>
+                        <th class="sortable" onclick="sortTable(1)">
+                            Domain / File
+                        </th>
+                        <th class="sortable" onclick="sortTable(2)">Status</th>
+                        <th class="sortable" onclick="sortTable(3)">
+                            Days Left
+                        </th>
+                        <th class="sortable" onclick="sortTable(4)">Issuer</th>
+                        <th class="sortable" onclick="sortTable(5)">
+                            Valid Until
+                        </th>
+                        <th class="sortable" onclick="sortTable(6)">Key</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{if eq (len .Results) 0}}
+                    <tr>
+                        <td
+                            colspan="7"
+                            style="
+                                text-align: center;
+                                color: var(--footer-color);
+                                padding: 40px;
+                            "
+                        >
+                            No certificate data available.
+                        </td>
+                    </tr>
+                    {{else}} {{range .Results}}
+                    <tr class="cert-row" data-status="{{.Status}}">
+                        <td
+                            style="
+                                text-align: center;
+                                color: var(--footer-color);
+                                font-weight: bold;
+                            "
+                            class="row-number"
+                        >
+                            -
+                        </td>
+                        <td>
+                            <a
+                                href="https://{{.URL}}"
+                                target="_blank"
+                                style="
+                                    color: var(--text-color);
+                                    text-decoration: none;
+                                    font-weight: bold;
+                                "
+                                onmouseover="
+                                    this.style.textDecoration = 'underline'
+                                "
+                                onmouseout="this.style.textDecoration = 'none'"
+                                >{{.URL}}</a
+                            >
+                        </td>
+                        <td class="status-cell">
+                            {{if eq .Status "VALID"}}<span class="icon-ok"
+                                >✅</span
+                            >{{else if or (eq .Status "WARNING") (eq .Status
+                            "SOON")}}<span class="icon-warn">⚠️</span>{{else if
+                            eq .Status "EXPIRED"}}<span class="icon-exp"
+                                >❌</span
+                            >{{else}}<span class="icon-err">⚡</span>{{end}}
+                            <span class="status-{{lower .Status}}"
+                                >{{.Status}}</span
+                            >
+                        </td>
+                        <td>{{.DaysRemaining}}</td>
+                        <td>{{.Issuer}}</td>
+                        <td>{{.NotAfter.Format "02. Jan 2006"}}</td>
+                        <td>{{.KeyAlgorithm}} {{.KeySize}}-bit</td>
+                    </tr>
+                    {{end}} {{end}}
+                </tbody>
+            </table>
+            {{end}}
+
+            <div class="footer">
+                Last updated: {{.LastUpdated.Format "02. Jan 2006 15:04:05"}}
+                <br />cert-checker <strong>v{{.Version}}</strong>
+            </div>
         </div>
-      </div>
-			<!-- search bar -->
-			<div style="margin-bottom: 20px; display: flex; justify-content: center;">
-    		<input type="text" id="searchInput" placeholder="🔍 Search by domain, issuer or status..." 
-          onkeyup="filterSearch()" style="width: 100%; max-width: 500px; padding: 12px; border-radius: 15px; border: 1px solid var(--border-color); background: var(--container-bg); color: var(--text-color); font-size: 1rem; outline: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-			</div>
-      <div style="display: flex; flex-direction: column; align-items: flex-start;">
-        <span style="font-size: 0.85rem; color: var(--footer-color); font-weight: normal; margin-top: 2px;">
-          {{len .Results}} Domain{{if ne (len .Results) 1}}s{{end}} monitored
-        </span>
-      </div>
+        <!-- JAVASCRIPT -->
+        <script>
+            // theme toggle
+            const toggleBtn = document.getElementById("themeToggle");
+            const themeIcon = document.getElementById("themeIcon");
+            const themeText = document.getElementById("themeText");
+            const body = document.body;
 
-      <table id="certTable">
-        <thead>
-          <tr>
-						<th style="width: 40px; text-align: center;" class="sortable" onclick="sortTable(0)">#</th>
-            <th class="sortable" onclick="sortTable(1)">Domain / File</th>									
-            <th class="sortable" onclick="sortTable(2)">Status</th>
-            <th class="sortable" onclick="sortTable(3)">Days Left</th>
-            <th class="sortable" onclick="sortTable(4)">Issuer</th>
-            <th class="sortable" onclick="sortTable(5)">Valid Until</th>
-            <th class="sortable" onclick="sortTable(6)">Key</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{if eq (len .Results) 0}}
-          <tr>
-            <td colspan="5" style="text-align: center; color: var(--footer-color); padding: 40px;">No certificate data available.</td>
-          </tr>
-          {{else}}
-          {{range .Results}}
-          <tr class="cert-row" data-status="{{.Status}}">
-            <td style="text-align: center; color: var(--footer-color); font-weight: bold;" class="row-number">-</td>
-						<td><a href="https://{{.URL}}" target="_blank" style="color: var(--text-color); text-decoration: none; font-weight: bold;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{.URL}}</a></td>
-            <td class="status-cell">
-              {{if eq .Status "VALID"}}<span class="icon-ok">✅</span>{{else if or (eq .Status "WARNING") (eq .Status "SOON")}}<span class="icon-warn">⚠️</span>{{else if eq .Status "EXPIRED"}}<span class="icon-exp">❌</span>{{else}}<span class="icon-err">⚡</span>{{end}}
-              <span class="status-{{lower .Status}}">{{.Status}}</span>
-            </td>
-            <td>{{.DaysRemaining}}</td>
-            <td>{{.Issuer}}</td>
-            <td>{{.NotAfter.Format "02. Jan 2006"}}</td>
-            <td>{{.KeyAlgorithm}} {{.KeySize}}-bit</td>
-          </tr>
-          {{end}}
-          {{end}}
-        </tbody>
-      </table>
-      {{end}}
-        
-      <div class="footer">
-			  Last updated: {{.LastUpdated.Format "02. Jan 2006 15:04:05"}}
-				<br>cert-checker <strong>v{{.Version}}</strong>
-			</div>
-    </div>
-    <!-- JAVASCRIPT -->
-    <script>
-    // theme toggle
-    const toggleBtn = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    const themeText = document.getElementById('themeText');
-    const body = document.body;
-      
-    // load saved theme
-    const savedTheme = localStorage.getItem('cert-dashboard-theme');
-    if (savedTheme === 'dark') { 
-      body.classList.add('dark-mode'); 
-      updateButton(true); 
-    }
+            // load saved theme
+            const savedTheme = localStorage.getItem("cert-dashboard-theme");
+            if (savedTheme === "dark") {
+                body.classList.add("dark-mode");
+                updateButton(true);
+            }
 
-    function toggleTheme() {
-      body.classList.toggle('dark-mode');
-      const isDark = body.classList.contains('dark-mode');
-      localStorage.setItem('cert-dashboard-theme', isDark ? 'dark' : 'light');
-      updateButton(isDark);
-    }
+            function toggleTheme() {
+                body.classList.toggle("dark-mode");
+                const isDark = body.classList.contains("dark-mode");
+                localStorage.setItem(
+                    "cert-dashboard-theme",
+                    isDark ? "dark" : "light",
+                );
+                updateButton(isDark);
+            }
 
-    function updateButton(isDark) {
-      themeIcon.textContent = isDark ? '☀️' : '🌙';
-      themeText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-    }
+            function updateButton(isDark) {
+                themeIcon.textContent = isDark ? "☀️" : "🌙";
+                themeText.textContent = isDark ? "Light Mode" : "Dark Mode";
+            }
 
-    // search
-    function filterSearch() {
-      const input = document.getElementById('searchInput');
-      const filter = input.value.toLowerCase();
-      const rows = document.querySelectorAll('.cert-row');
+            // search
+            function filterSearch() {
+                const input = document.getElementById("searchInput");
+                const filter = input.value.toLowerCase();
+                const rows = document.querySelectorAll(".cert-row");
 
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-      });
-      updateRowNumbers();
-    }
+                rows.forEach((row) => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? "" : "none";
+                });
+                updateRowNumbers();
+            }
 
-    // filter table
-    function filterTable(status) {
-      const rows = document.querySelectorAll('.cert-row');
-      const buttons = document.querySelectorAll('.filter-btn');
-            
-      // update buttons
-      buttons.forEach(btn => {
-        if (btn.textContent.includes(status) || (status === 'all' && btn.textContent === 'All')) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
+            // filter table
+            function filterTable(status) {
+                const rows = document.querySelectorAll(".cert-row");
+                const buttons = document.querySelectorAll(".filter-btn");
 
-      // filter rows
-      rows.forEach(row => {
-        const rowStatus = row.getAttribute('data-status');
-        // special case: "WARNING" button should also display "SOON"
-        if (status === 'WARNING') {
-          if (rowStatus === 'WARNING' || rowStatus === 'SOON') {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
-        } else if (status === 'all' || rowStatus === status) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-      updateRowNumbers();
-    }
+                // update buttons
+                buttons.forEach((btn) => {
+                    if (
+                        btn.textContent.includes(status) ||
+                        (status === "all" && btn.textContent === "All")
+                    ) {
+                        btn.classList.add("active");
+                    } else {
+                        btn.classList.remove("active");
+                    }
+                });
 
-    // sorting (persistence)
-    let sortDirection = {};
-    let sortColumn = null;
+                // filter rows
+                rows.forEach((row) => {
+                    const rowStatus = row.getAttribute("data-status");
+                    // special case: "WARNING" button should also display "SOON"
+                    if (status === "WARNING") {
+                        if (rowStatus === "WARNING" || rowStatus === "SOON") {
+                            row.style.display = "";
+                        } else {
+                            row.style.display = "none";
+                        }
+                    } else if (status === "all" || rowStatus === status) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+                updateRowNumbers();
+            }
 
-    function loadSortSettings() {
-      const saved = localStorage.getItem('cert-dashboard-sort');
-      if (saved) {
-        try {
-          const settings = JSON.parse(saved);
-          sortColumn = settings.column;
-          sortDirection = settings.direction || {};
-          if (sortColumn !== null) {
-            sortTable(sortColumn);
-          }
-        } catch (e) {
-          console.error('Failed to load sort settings:', e);
-        }
-      }
-    }
+            // sorting (persistence)
+            let sortDirection = {};
+            let sortColumn = null;
 
-    function saveSortSettings() {
-      const settings = {
-        column: sortColumn,
-        direction: sortDirection
-      };
-      localStorage.setItem('cert-dashboard-sort', JSON.stringify(settings));
-    }
+            function loadSortSettings() {
+                const saved = localStorage.getItem("cert-dashboard-sort");
+                if (saved) {
+                    try {
+                        const settings = JSON.parse(saved);
+                        sortColumn = settings.column;
+                        sortDirection = settings.direction || {};
+                        if (sortColumn !== null) {
+                            sortTable(sortColumn);
+                        }
+                    } catch (e) {
+                        console.error("Failed to load sort settings:", e);
+                    }
+                }
+            }
 
-    function sortTable(colIndex) {
-      const table = document.getElementById("certTable");
-      if (!table) return;
-      
-      const rows = Array.from(table.querySelectorAll("tbody tr"));
-      const headers = table.querySelectorAll("th");
-      
-      // toggle direction
-      const currentDir = sortDirection[colIndex] || 'asc';
-      const newDir = currentDir === 'asc' ? 'desc' : 'asc';
-      sortDirection[colIndex] = newDir;
-      sortColumn = colIndex;    
-      // save
-      saveSortSettings();
-      // reset CSS classes
-      headers.forEach(th => th.classList.remove('asc', 'desc'));
-      headers[colIndex].classList.add(newDir);
-      // sort
-      rows.sort((a, b) => {
-        let valA = a.cells[colIndex].textContent.trim();
-        let valB = b.cells[colIndex].textContent.trim();
-        // "#" (numbers)
-        if (colIndex === 0) {
-          const numA = parseInt(valA) || 0;
-          const numB = parseInt(valB) || 0;
-          return newDir === 'asc' ? numA - numB : numB - numA;
-        }
-        // "Days Left" (numbers)
-        if (colIndex === 3) {
-          const numA = parseInt(valA) || 0;
-          const numB = parseInt(valB) || 0;
-          return newDir === 'asc' ? numA - numB : numB - numA;
-        }
-        // "Valid Until" (date)
-        if (colIndex === 5) {
-          const parseDate = (str) => {
-          const parts = str.split(' ');
-          if (parts.length < 3) return new Date(0);
-            const day = parseInt(parts[0]);
-            const monthMap = {Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11};
-            const year = parseInt(parts[2]);
-            return new Date(year, monthMap[parts[1]], day);
-          };
-          const dateA = parseDate(valA);
-          const dateB = parseDate(valB);
-          if (isNaN(dateA.getTime())) return valA.localeCompare(valB);
-          return newDir === 'asc' ? dateA - dateB : dateB - dateA;
-        }
-        // default    
-        return newDir === 'asc' ? valA.localeCompare(valB, undefined, {numeric: true}) : valB.localeCompare(valA, undefined, {numeric: true});
-      });
-      // insert new lines
-      const tbody = table.querySelector("tbody");
-      rows.forEach(row => tbody.appendChild(row));      
-      // update numbers
-      updateRowNumbers();
-    }
+            function saveSortSettings() {
+                const settings = {
+                    column: sortColumn,
+                    direction: sortDirection,
+                };
+                localStorage.setItem(
+                    "cert-dashboard-sort",
+                    JSON.stringify(settings),
+                );
+            }
 
-    // auto refresh
-    let refreshInterval = null;
-    let refreshTime = 60;
-    let isPaused = false;
+            function sortTable(colIndex) {
+                const table = document.getElementById("certTable");
+                if (!table) return;
 
-    function startAutoRefresh() {
-      if (refreshInterval) clearInterval(refreshInterval);
+                const rows = Array.from(table.querySelectorAll("tbody tr"));
+                const headers = table.querySelectorAll("th");
 
-      if (refreshTime > 0) {
-        refreshInterval = setInterval(() => {
-          if (!isPaused) {
-            location.reload();
-          }
-        }, refreshTime * 1000);
-      }
-    }
+                // toggle direction
+                const currentDir = sortDirection[colIndex] || "asc";
+                const newDir = currentDir === "asc" ? "desc" : "asc";
+                sortDirection[colIndex] = newDir;
+                sortColumn = colIndex;
+                // save
+                saveSortSettings();
+                // reset CSS classes
+                headers.forEach((th) => th.classList.remove("asc", "desc"));
+                headers[colIndex].classList.add(newDir);
+                // sort
+                rows.sort((a, b) => {
+                    let valA = a.cells[colIndex].textContent.trim();
+                    let valB = b.cells[colIndex].textContent.trim();
+                    // "#" (numbers)
+                    if (colIndex === 0) {
+                        const numA = parseInt(valA) || 0;
+                        const numB = parseInt(valB) || 0;
+                        return newDir === "asc" ? numA - numB : numB - numA;
+                    }
+                    // "Days Left" (numbers)
+                    if (colIndex === 3) {
+                        const numA = parseInt(valA) || 0;
+                        const numB = parseInt(valB) || 0;
+                        return newDir === "asc" ? numA - numB : numB - numA;
+                    }
+                    // "Valid Until" (date)
+                    if (colIndex === 5) {
+                        const parseDate = (str) => {
+                            const parts = str.split(" ");
+                            if (parts.length < 3) return new Date(0);
+                            const day = parseInt(parts[0]);
+                            const monthMap = {
+                                Jan: 0,
+                                Feb: 1,
+                                Mar: 2,
+                                Apr: 3,
+                                May: 4,
+                                Jun: 5,
+                                Jul: 6,
+                                Aug: 7,
+                                Sep: 8,
+                                Oct: 9,
+                                Nov: 10,
+                                Dec: 11,
+                            };
+                            const year = parseInt(parts[2]);
+                            return new Date(year, monthMap[parts[1]], day);
+                        };
+                        const dateA = parseDate(valA);
+                        const dateB = parseDate(valB);
+                        if (isNaN(dateA.getTime()))
+                            return valA.localeCompare(valB);
+                        return newDir === "asc" ? dateA - dateB : dateB - dateA;
+                    }
+                    // default
+                    return newDir === "asc"
+                        ? valA.localeCompare(valB, undefined, { numeric: true })
+                        : valB.localeCompare(valA, undefined, {
+                              numeric: true,
+                          });
+                });
+                // insert new lines
+                const tbody = table.querySelector("tbody");
+                rows.forEach((row) => tbody.appendChild(row));
+                // update numbers
+                updateRowNumbers();
+            }
 
-    function changeRefreshInterval(seconds) {
-      refreshTime = parseInt(seconds);
-      localStorage.setItem('cert-dashboard-interval', refreshTime);
-      startAutoRefresh();
-    }
+            // auto refresh
+            let refreshInterval = null;
+            let refreshTime = 60;
+            let isPaused = false;
 
-    function toggleAutoRefreshManual() {
-      isPaused = !isPaused;
-      const btn = document.getElementById('pauseResumeBtn');
-    
-      if (isPaused) {
-        btn.textContent = "▶️ Resume Auto-Refresh";
-        btn.style.background = "#28a745";
-        btn.style.color = "white";
-      } else {
-        btn.textContent = "⏸️ Pause Auto-Refresh";
-        btn.style.background = "var(--table-header-bg)";
-        btn.style.color = "var(--text-color)";
-      }
-    }
+            function startAutoRefresh() {
+                if (refreshInterval) clearInterval(refreshInterval);
 
-    // settings menu
-    function toggleSettingsMenu() {
-      const menu = document.getElementById('settingsMenu');
-      menu.classList.toggle('active');
-    }
+                if (refreshTime > 0) {
+                    refreshInterval = setInterval(() => {
+                        if (!isPaused) {
+                            location.reload();
+                        }
+                    }, refreshTime * 1000);
+                }
+            }
 
-    document.addEventListener('click', function(e) {
-      const menu = document.getElementById('settingsMenu');
-      const btn = document.getElementById('settingsBtn');
-      if (!menu.contains(e.target) && !btn.contains(e.target)) {
-        menu.classList.remove('active');
-      }
-    });
+            function changeRefreshInterval(seconds) {
+                refreshTime = parseInt(seconds);
+                localStorage.setItem("cert-dashboard-interval", refreshTime);
+                startAutoRefresh();
+            }
 
-    // row numbers
-    function updateRowNumbers() {
-      const rows = document.querySelectorAll('#certTable tbody tr:not([style*="display: none"])');
-      rows.forEach((row, index) => {
-        const numCell = row.querySelector('.row-number');
-        if (numCell) {
-          numCell.textContent = index + 1;
-        }
-      });
-    }
+            function toggleAutoRefreshManual() {
+                isPaused = !isPaused;
+                const btn = document.getElementById("pauseResumeBtn");
 
-    // init on load
-    window.onload = function() {
-      // load saved interval setting
-      const savedInterval = localStorage.getItem('cert-dashboard-interval');
-      if (savedInterval) {
-        refreshTime = parseInt(savedInterval);
-        document.getElementById('refreshInterval').value = refreshTime;
-      }        
-      startAutoRefresh();
-      updateRowNumbers();
-        
-      loadSortSettings();
-    };
-    </script>
-  </body>
+                if (isPaused) {
+                    btn.textContent = "▶️ Resume Auto-Refresh";
+                    btn.style.background = "#28a745";
+                    btn.style.color = "white";
+                } else {
+                    btn.textContent = "⏸️ Pause Auto-Refresh";
+                    btn.style.background = "var(--table-header-bg)";
+                    btn.style.color = "var(--text-color)";
+                }
+            }
+
+            // settings menu
+            function toggleSettingsMenu() {
+                const menu = document.getElementById("settingsMenu");
+                menu.classList.toggle("active");
+            }
+
+            document.addEventListener("click", function (e) {
+                const menu = document.getElementById("settingsMenu");
+                const btn = document.getElementById("settingsBtn");
+                if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                    menu.classList.remove("active");
+                }
+            });
+
+            // row numbers
+            function updateRowNumbers() {
+                const rows = document.querySelectorAll(
+                    '#certTable tbody tr:not([style*="display: none"])',
+                );
+                rows.forEach((row, index) => {
+                    const numCell = row.querySelector(".row-number");
+                    if (numCell) {
+                        numCell.textContent = index + 1;
+                    }
+                });
+            }
+
+            // init on load
+            window.onload = function () {
+                // load saved interval setting
+                const savedInterval = localStorage.getItem(
+                    "cert-dashboard-interval",
+                );
+                if (savedInterval) {
+                    refreshTime = parseInt(savedInterval);
+                    document.getElementById("refreshInterval").value =
+                        refreshTime;
+                }
+                startAutoRefresh();
+                updateRowNumbers();
+
+                loadSortSettings();
+            };
+        </script>
+    </body>
 </html>

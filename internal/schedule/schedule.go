@@ -2,6 +2,9 @@
 package schedule
 
 import (
+	"cert-checker/internal/config"
+	"cert-checker/internal/constants"
+	"cert-checker/internal/output"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,10 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"cert-checker/internal/config"
-	"cert-checker/internal/constants"
-	"cert-checker/internal/output"
 
 	"github.com/charmbracelet/huh"
 )
@@ -359,7 +358,7 @@ func ListAndManageJobs() {
 	}
 }
 
-func removeSelectedCronJobs(selectedIndices []int) error {	
+func removeSelectedCronJobs(selectedIndices []int) error {
 	cmd := exec.Command("crontab", "-l")
 	out, err := cmd.Output()
 	if err != nil {

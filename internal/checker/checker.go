@@ -156,7 +156,7 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 	}
 
 	// chain logic
-	if chain != nil && len(chain) > 0 {
+	if len(chain) > 0 {
 		info.ChainLength = len(chain)
 		info.IsChainComplete = true
 		// root issuer is the last cert in the chain
@@ -245,6 +245,5 @@ func SaveCert(cert *x509.Certificate, hostname string, outputDir string) error {
 	if err := pem.Encode(file, block); err != nil {
 		return fmt.Errorf("could not encode PEM: %w", err)
 	}
-
 	return nil
 }

@@ -1,9 +1,9 @@
-// Version 1.2.1
+// Version 1.2.2
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
-// Repo: 		https://github.com/mrtoadie/go-check-cert
+// Repo: 	https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: May 20 2026
+// last modification: May 25 2026
 package main
 
 import (
@@ -15,8 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	//"strconv"
 
 	"cert-checker/internal/checker"
 	"cert-checker/internal/config"
@@ -61,6 +59,8 @@ func main() {
 		"-cert":     true,
 		"-key":      true,
 		"-download": true, "-dl": true,
+		"-advanced": true, "-a": true,
+		"-markdown": true, "-md": true,
 	}
 	port := config.GetWebPort()
 
@@ -94,14 +94,20 @@ func main() {
 	helpFlag := flag.Bool("help", false, "Show help")
 	addBoolAlias(helpFlag, "h", "help", "Show help")
 
-	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:" + port)
-	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:" + port)
+	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:"+port)
+	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:"+port)
 
 	certFlag := flag.String("cert", "", "Path to SSL certificate file (.pem/.crt)")
 	keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
 
 	downloadFlag := flag.Bool("download", false, "Download certificate files to certs directory")
 	addBoolAlias(downloadFlag, "dl", "download", "Download certificate files to certs directory")
+
+	advancedFlag := flag.Bool("advanced", false, "Show advanced certificate details")
+	addBoolAlias(advancedFlag, "a", "advanced", "Show advanced certificate details")
+
+	markdownFlag := flag.Bool("markdown", false, "Saves results in Markdown format")
+	addBoolAlias(markdownFlag, "md", "markdown", "Saves results in Markdown format")
 
 	// usage func
 	flag.Usage = func() {
@@ -144,7 +150,7 @@ func main() {
 
 	if *helpFlag {
 		fmt.Println(output.ColBlue, "\ncert-checker "+constants.Version, output.ColReset)
-		
+
 		fmt.Println(output.ColYellow, "\n Usage: cert-checker [options]", output.ColReset)
 		fmt.Println(output.ColBlue, "\n Options:", output.ColReset)
 
@@ -296,25 +302,8 @@ func main() {
 		// even if a timeout occurred, show the previous results
 	}
 
-	/* DEBUG: print raw cert presence in results
-	   fmt.Printf("\n%s=== DEBUG RESULTS ===%s\n", output.ColBlue, output.ColReset)
-	   validCount := 0
-	   nilCertCount := 0
-	   for i, r := range results {
-	       fmt.Printf(" [%d] %s | Status: %s | RawCert: %v\n", i, r.URL, r.Status, r.RawCert != nil)
-	       if r.Status == "VALID" {
-	           validCount++
-	           if r.RawCert == nil {
-	               nilCertCount++
-	           }
-	       }
-	   }
-	   fmt.Printf("Total Valid: %d, Valid with Nil Cert: %d\n\n", validCount, nilCertCount)
-	*/
-
 	// download certs if requested
 	if *downloadFlag {
-		//debug
 		fmt.Printf("\n%sDownloading valid certificates...%s\n", output.ColBlue, output.ColReset)
 		certDir, err := config.GetCertPath()
 
@@ -350,7 +339,16 @@ func main() {
 	}
 
 	// print results
-	output.PrintResults(results)
+	if *advancedFlag {
+		output.PrintAdvancedResults(results)
+	} else {
+		output.PrintResults(results)
+	}
+
+	if *markdownFlag {
+		output.ExportMarkdown(results, "cert-report.md")
+		os.Exit(0)
+	}
 
 	// save JSON
 	var saveJSON bool

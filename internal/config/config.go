@@ -3,16 +3,15 @@ package config
 
 import (
 	"bufio"
+	"cert-checker/internal/constants"
+	"cert-checker/internal/output"
+	"cert-checker/internal/parser"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-
-	"cert-checker/internal/constants"
-	"cert-checker/internal/output"
-	"cert-checker/internal/parser"
 )
 
 var (
@@ -222,21 +221,30 @@ func parseURLs(s string) []string {
 // wrapper
 func GetConfigPath() (string, error) {
 	loadConfig()
-	homeDir, _ := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cloud not finde home directory: %w", err)
+	}
 	configDir := filepath.Join(homeDir, constants.ConfigDir)
 	return resolvePath(cfg.UrlsFile, configDir, "urls.txt"), nil
 }
 
 func GetLogPath() (string, error) {
 	loadConfig()
-	homeDir, _ := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cloud not finde home directory: %w", err)
+	}
 	configDir := filepath.Join(homeDir, constants.ConfigDir)
 	return resolvePath(cfg.LogFile, configDir, "cert-check.log"), nil
 }
 
 func GetOutputPath() (string, error) {
 	loadConfig()
-	homeDir, _ := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cloud not finde home directory: %w", err)
+	}
 	outputDirRaw := cfg.OutputDir
 	if outputDirRaw == "" {
 		outputDirRaw = "reports"
@@ -252,7 +260,10 @@ func GetOutputPath() (string, error) {
 
 func GetCertPath() (string, error) {
 	loadConfig()
-	homeDir, _ := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cloud not finde home directory: %w", err)
+	}
 	certDirRaw := cfg.CertDir
 	if certDirRaw == "" {
 		certDirRaw = "certs"

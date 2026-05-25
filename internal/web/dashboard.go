@@ -49,7 +49,8 @@ func StartServer(port, certFile, keyFile, Version string) {
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		isSecure := certFile != "" && keyFile != ""
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"status": "running", "secure": %t, "port": "%s"}`, isSecure, port)))
+		//w.Write([]byte(fmt.Sprintf(`{"status": "running", "secure": %t, "port": "%s"}`, isSecure, port)))
+		fmt.Fprintf(w, `{"status": "running", "secure": %t, "port": "%s"}`, isSecure, port)
 	})
 
 	addr := ":" + port
@@ -132,7 +133,7 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Scanning directory: %s", outputDir)
 
 	// check whether the directory exists
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {		
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		page.ErrorMessage = fmt.Sprintf("Output directory not found: %s. Run 'cert-checker' first to generate reports.", outputDir)
 		renderPage(w, page)
 		return
@@ -203,18 +204,18 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 		for _, res := range report.Results {
 			notBefore, _ := time.Parse(time.RFC3339, res.NotBefore)
 			notAfter, _ := time.Parse(time.RFC3339, res.NotAfter)
-			
+
 			// Error Handling (String oder nil)
 			var err error
 			switch v := res.Error.(type) {
 			case string:
 				if v != "" {
-					err = fmt.Errorf(v)
+					err = fmt.Errorf("%s", v)
 				}
 			case nil:
 				err = nil
 			default:
-				// Andere Typen ignorieren oder als Fehler behandeln
+				// ignore other types or treat them as errors
 				err = fmt.Errorf("unexpected error format")
 			}
 
@@ -247,12 +248,12 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 		mergedResults = append(mergedResults, res)
 	}
 
-	// Sortieren nach URL
+	// sort by URL
 	sort.Slice(mergedResults, func(i, j int) bool {
 		return mergedResults[i].URL < mergedResults[j].URL
 	})
 
-	// Bestes LastUpdated finden
+	// find LastUpdated
 	if len(allGeneratedTimes) > 0 {
 		sort.Slice(allGeneratedTimes, func(i, j int) bool {
 			return allGeneratedTimes[i].After(allGeneratedTimes[j])

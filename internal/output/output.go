@@ -2,13 +2,14 @@
 package output
 
 import (
+	"bufio"
+	"cert-checker/internal/checker"
+	"cert-checker/internal/constants"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"time"
-
-	"cert-checker/internal/checker"
 )
 
 const (
@@ -36,7 +37,7 @@ type CertResult struct {
 	NotAfter           string   `json:"NotAfter"`
 	DaysRemaining      int      `json:"DaysRemaining"`
 	Status             string   `json:"Status"`
-	Error              string   `json:"Error"` // Als String statt error-Objekt!
+	Error              string   `json:"Error"`
 	KeyAlgorithm       string   `json:"KeyAlgorithm"`
 	KeySize            int      `json:"KeySize"`
 	SignatureAlgorithm string   `json:"SignatureAlgorithm"`
@@ -48,7 +49,7 @@ type CertResult struct {
 	RootIssuer         string   `json:"RootIssuer"`
 }
 
-// saves the results as JSON
+// ExportJSON writes the results as JSON to a file as an indented JSON report
 func ExportJSON(results []checker.CertInfo, filename string) error {
 	if filename == "" {
 		return nil
@@ -71,8 +72,8 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 			Issuer:             r.Issuer,
 			Subject:            r.Subject,
 			SerialNumber:       r.SerialNumber,
-			NotBefore:          r.NotBefore.Format(time.RFC3339),
-			NotAfter:           r.NotAfter.Format(time.RFC3339),
+			NotBefore:          r.NotBefore.Format(constants.RFC3339Format),
+			NotAfter:           r.NotAfter.Format(constants.RFC3339Format),
 			DaysRemaining:      r.DaysRemaining,
 			Status:             r.Status,
 			Error:              "",
@@ -92,7 +93,7 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 	}
 
 	report := ReportData{
-		GeneratedAt: time.Now().Format(time.RFC3339),
+		GeneratedAt: time.Now().Format(constants.RFC3339Format),
 		TotalCount:  len(results),
 		Results:     certResults,
 	}
@@ -100,14 +101,13 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 	if err := encoder.Encode(report); err != nil {
 		return fmt.Errorf("couldn't write JSON: %w", err)
 	}
-
 	return nil
 }
 
-// selects the color based on the status of the certificate
+// GetColor returns the ANSI color code for the given status
 func GetColor(status string) string {
 	switch status {
-	case "OK", "VALID":
+	case "VALID":
 		return ColGreen
 	case "SOON", "WARNING":
 		return ColYellow
@@ -116,7 +116,7 @@ func GetColor(status string) string {
 	}
 }
 
-// selects the color based on the remaining days
+// getDaysColor returns the ANSI escape code for the given days-remaining value
 func getDaysColor(days int) string {
 	if days < 30 {
 		return ColRed
@@ -127,8 +127,42 @@ func getDaysColor(days int) string {
 	return ColGreen
 }
 
-// format and output the results
+// printSummary prints the status count footer shared by all result views.
+func printSummary(results []checker.CertInfo) {
+	counts := map[string]int{}
+	for _, r := range results {
+		counts[r.Status]++
+	}
+	count := func(status string) int { return counts[status] }
+
+	fmt.Printf(" %sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
+		ColGreen, count("VALID"), ColReset,
+		ColYellow, count("WARNING"), ColReset,
+		ColRed, count("EXPIRED"), ColReset,
+		ColRed, count("ERROR"), ColReset)
+	fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
+}
+
+// PrintResults prints a compact one-line-per-cert summary to stdout
 func PrintResults(results []checker.CertInfo) {
+	fmt.Printf("%s=== RESULTS ===%s\n\n", ColBlue, ColReset)
+
+	for i, r := range results {
+		num := i + 1
+		c := GetColor(r.Status)
+		daysC := getDaysColor(r.DaysRemaining)
+		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
+		fmt.Printf("   Status: %s%-5s%s | Days:%s%3d%s\n", c, r.Status, ColReset, daysC, r.DaysRemaining, ColReset)
+		if r.Error != nil {
+			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
+		}
+		fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
+	}
+	printSummary(results)
+}
+
+// PrintAdvancedResults prints detailed certificate information to stdout
+func PrintAdvancedResults(results []checker.CertInfo) {
 	fmt.Printf("%s=== RESULTS ===%s\n\n", ColBlue, ColReset)
 
 	for i, r := range results {
@@ -142,9 +176,12 @@ func PrintResults(results []checker.CertInfo) {
 		if !r.IsChainComplete {
 			statusLine += fmt.Sprintf(" |%s CHAIN ISSUE%s", ColRed, ColReset)
 		} else {
-			statusLine += fmt.Sprintf(" |%s CHAIN OK%s", ColGreen, ColReset)
+			statusLine += fmt.Sprintf(" |%s CHAIN VALID%s", ColGreen, ColReset)
 		}
 		fmt.Println(statusLine)
+
+		fmt.Printf("   Days:%s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
+			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 
 		// chain details
 		fmt.Printf("   Chain Length: %d Certificates\n", r.ChainLength)
@@ -160,25 +197,27 @@ func PrintResults(results []checker.CertInfo) {
 			fmt.Printf("   Root Issuer: %s\n", r.RootIssuer)
 		}
 
-		fmt.Printf("   Days: %s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
-			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
 		fmt.Printf("   Serial Number: %s\n", r.SerialNumber)
 
 		// key info
-		fmt.Printf("   Key: %s %d-bit | Sig: %s\n",
-			r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
-		if r.KeyAlgorithm == "RSA" && r.KeySize < 2048 {
-			fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
-		}
-		if r.KeyAlgorithm == "RSA" && r.KeySize >= 4096 {
-			fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
-		}
-		if r.KeyAlgorithm == "RSA" && r.KeySize == 2048 {
-			fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
-		}
-		if r.KeyAlgorithm == "ECDSA" && r.KeySize < 256 {
-			fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+		switch r.KeyAlgorithm {
+		case "RSA":
+			fmt.Printf("   Key: %s %d-bit | Sig: %s\n",
+				r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
+			if r.KeySize < 2048 {
+				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+			}
+			if r.KeySize >= 4096 {
+				fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+			}
+			if r.KeySize == 2048 {
+				fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+			}
+		case "ECDSA":
+			if r.KeySize < 256 {
+				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+			}
 		}
 
 		// sans
@@ -195,24 +234,72 @@ func PrintResults(results []checker.CertInfo) {
 		}
 		fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
 	}
+	printSummary(results)
+}
 
-	// count statuses
+// ExportMarkdown saves the results as a Markdown table
+func ExportMarkdown(results []checker.CertInfo, filename string) error {
+	if filename == "" {
+		return nil
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("could not create file %s: %w", filename, err)
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	defer writer.Flush()
+
+	// table titel
+	fmt.Fprintf(writer, "# Certificate Report\n\n")
+	fmt.Fprintf(writer, "*Generated on: %s*\n\n", time.Now().Format("02. Jan 2006 15:04"))
+
+	// table header
+	fmt.Fprintln(writer, "| Domain | Status | Days Left | Issuer | Valid Until | Error |")
+	fmt.Fprintln(writer, "| :--- | :--- | :---: | :--- | :--- | :--- |")
+
+	// table rows
+	for _, r := range results {
+		errorMsg := ""
+		if r.Error != nil {
+			errorMsg = r.Error.Error()
+		}
+		// markdown escaping for pipe characters in data
+		domain := strings.ReplaceAll(r.URL, "|", "\\|")
+		issuer := strings.ReplaceAll(r.Issuer, "|", "\\|")
+		errorMsg = strings.ReplaceAll(errorMsg, "|", "\\|")
+
+		fmt.Fprintf(writer, "| %s | **%s** | %d | %s | %s | %s |\n",
+			domain,
+			r.Status,
+			r.DaysRemaining,
+			issuer,
+			r.NotAfter.Format("02. Jan 2006"),
+			errorMsg,
+		)
+	}
+
 	counts := map[string]int{}
 	for _, r := range results {
 		counts[r.Status]++
 	}
+	total := len(results)
 
-	// helper for safe count lookup
-	count := func(status string) int {
-		return counts[status]
+	if total == 0 {
+		fmt.Fprint(writer, "\n*No results*\n")
+		return nil
 	}
 
-	fmt.Printf(" %sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
-		ColGreen, count("VALID"), ColReset,
-		ColYellow, count("WARNING"), ColReset,
-		ColRed, count("EXPIRED"), ColReset,
-		ColRed, count("ERROR"), ColReset)
-	fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
+	fmt.Fprintf(writer, "\n---\n\n### Summary\n")
+	fmt.Fprintf(writer, "- **Total:** %d\n", total)
+	fmt.Fprintf(writer, "- **Valid:** %d (%.1f%%)\n", counts["VALID"], float64(counts["VALID"])/float64(total)*100)
+	fmt.Fprintf(writer, "- **Warnings:** %d (%.1f%%)\n", counts["WARNING"]+counts["SOON"], float64(counts["WARNING"]+counts["SOON"])/float64(total)*100)
+	fmt.Fprintf(writer, "- **Expired:** %d (%.1f%%)\n", counts["EXPIRED"], float64(counts["EXPIRED"])/float64(total)*100)
+	fmt.Fprintf(writer, "- **Errors:** %d (%.1f%%)\n", counts["ERROR"], float64(counts["ERROR"])/float64(total)*100)
+
+	return nil
 }
 
 // TruncateString shortens a string and adds "..."

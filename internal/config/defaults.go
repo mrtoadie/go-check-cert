@@ -29,23 +29,29 @@ func EnsureDefaults() {
 	if _, err := os.Stat(configIniPath); os.IsNotExist(err) {
 		createConfigIni(configIniPath)
 	}
+	/*
+		logsDir := filepath.Join(configDir, "logs")
+		if err := os.MkdirAll(logsDir, 0755); err != nil {
+			fmt.Printf("%sError creating logs dir: %v%s\n", output.ColRed, err, output.ColReset)
+			return
+		}
 
-	logsDir := filepath.Join(configDir, "logs")
-	if err := os.MkdirAll(logsDir, 0755); err != nil {
-		fmt.Printf("%sError creating logs dir: %v%s\n", output.ColRed, err, output.ColReset)
-		return
-	}
+		reportsDir := filepath.Join(configDir, "reports")
+		if err := os.MkdirAll(reportsDir, 0755); err != nil {
+			fmt.Printf("%sError creating reports dir: %v%s\n", output.ColRed, err, output.ColReset)
+			return
+		}
 
-	reportsDir := filepath.Join(configDir, "reports")
-	if err := os.MkdirAll(reportsDir, 0755); err != nil {
-		fmt.Printf("%sError creating reports dir: %v%s\n", output.ColRed, err, output.ColReset)
-		return
-	}
-
-	certsDir := filepath.Join(configDir, "certs")
-	if err := os.MkdirAll(certsDir, 0755); err != nil {
-		fmt.Printf("%sError creating certs dir: %v%s\n", output.ColRed, err, output.ColReset)
-		return
+		certsDir := filepath.Join(configDir, "certs")
+		if err := os.MkdirAll(certsDir, 0755); err != nil {
+			fmt.Printf("%sError creating certs dir: %v%s\n", output.ColRed, err, output.ColReset)
+			return
+		}
+	*/
+	for _, dir := range []string{"logs", "reports", "certs"} {
+		if err := os.MkdirAll(filepath.Join(configDir, dir), 0755); err != nil {
+			fmt.Printf("%sError creating %s dir: %v%s\n", output.ColRed, dir, err, output.ColReset)
+		}
 	}
 
 	defaultURLsPath := filepath.Join(configDir, "default_urls.txt")
