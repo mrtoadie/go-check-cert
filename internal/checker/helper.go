@@ -30,7 +30,7 @@ func ExtractHostname(input string) string {
 	return host
 }
 
-// determines known extensions (.pem, .crt, .cer, .key)
+// IsCertFile determines known extensions .pem, .crt, .cer, .key
 func IsCertFile(path string) bool {
 	return strings.HasSuffix(path, ".pem") ||
 		strings.HasSuffix(path, ".crt") ||

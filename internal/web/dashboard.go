@@ -35,7 +35,7 @@ type DashboardPage struct {
 	Version      string
 }
 
-// StartServer started the web server (HTTP oder HTTPS)
+// StartServer started the web server (HTTP or HTTPS)
 func StartServer(port, certFile, keyFile, Version string) {
 
 	initTemplate()
@@ -49,7 +49,6 @@ func StartServer(port, certFile, keyFile, Version string) {
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		isSecure := certFile != "" && keyFile != ""
 		w.Header().Set("Content-Type", "application/json")
-		//w.Write([]byte(fmt.Sprintf(`{"status": "running", "secure": %t, "port": "%s"}`, isSecure, port)))
 		fmt.Fprintf(w, `{"status": "running", "secure": %t, "port": "%s"}`, isSecure, port)
 	})
 
@@ -101,7 +100,7 @@ var dashboardTemplate *template.Template
 func initTemplate() {
 	funcMap := template.FuncMap{
 		"lower": strings.ToLower,
-		"add":   func(a, b float64) float64 { return a + b },
+		//"add":   func(a, b float64) float64 { return a + b },
 	}
 
 	// html dashboard template
@@ -205,7 +204,7 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 			notBefore, _ := time.Parse(time.RFC3339, res.NotBefore)
 			notAfter, _ := time.Parse(time.RFC3339, res.NotAfter)
 
-			// Error Handling (String oder nil)
+			// error handling (string or nil)
 			var err error
 			switch v := res.Error.(type) {
 			case string:

@@ -252,7 +252,7 @@ func ExportMarkdown(results []checker.CertInfo, filename string) error {
 	writer := bufio.NewWriter(file)
 	defer writer.Flush()
 
-	// table titel
+	// table title
 	fmt.Fprintf(writer, "# Certificate Report\n\n")
 	fmt.Fprintf(writer, "*Generated on: %s*\n\n", time.Now().Format("02. Jan 2006 15:04"))
 

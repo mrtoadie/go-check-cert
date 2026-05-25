@@ -24,7 +24,7 @@ type CronJob struct {
 	FullEntry string
 }
 
-// ScheduleMain: starts the cron setup menu
+// ScheduleMain starts the cron setup menu
 func ScheduleMain() {
 	var action string
 
@@ -66,7 +66,7 @@ func ScheduleMain() {
 	}
 }
 
-// validateCronField: is a generic validation function
+// validateCronField is a generic validation function
 func validateCronField(value string, min, max int, allowWildcard bool) error {
 	if value == "" {
 		return fmt.Errorf("field cannot be empty")
@@ -84,7 +84,7 @@ func validateCronField(value string, min, max int, allowWildcard bool) error {
 	return nil
 }
 
-// CreateCron: creates a new cron job
+// CreateCron creates a new cron job
 func CreateCron() {
 	var (
 		minute         = "0"
@@ -218,7 +218,7 @@ func installCronJob(binaryPath, cronExpression string) error {
 	return nil
 }
 
-// getCronJobs: central function for parsing the crontab
+// getCronJobs central function for parsing the crontab
 func getCronJobs() ([]CronJob, error) {
 	cmd := exec.Command("crontab", "-l")
 	out, err := cmd.Output()

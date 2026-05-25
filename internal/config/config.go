@@ -18,7 +18,7 @@ import (
 var (
 	cfg struct {
 		Timeout     int
-		UrlsFile    string
+		URLsFile    string
 		LogFile     string
 		OutputDir   string
 		CertDir     string
@@ -94,7 +94,7 @@ func loadConfig() {
 						cfg.Timeout = t
 					}
 				case "urls_file":
-					cfg.UrlsFile = val
+					cfg.URLsFile = val
 				case "log_file":
 					cfg.LogFile = val
 				case "report_dir":
@@ -133,10 +133,6 @@ func GetTimeout() int { loadConfig(); return cfg.Timeout }
 // GetDefaultURLs returns the list of default URLs from configuration.
 func GetDefaultURLs() []string { loadConfig(); return cfg.DefaultURLs }
 
-func GetUrlsFile() string  { loadConfig(); return cfg.UrlsFile }
-func GetLogFile() string   { loadConfig(); return cfg.LogFile }
-func GetOutputDir() string { loadConfig(); return cfg.OutputDir }
-
 // GetWebPort returns the configured web dashboard port.
 // Falls back to defaultWebPort ("8080") if not set.
 func GetWebPort() string {
@@ -164,7 +160,7 @@ func GetConfigPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return resolvePath(cfg.UrlsFile, dir, "urls.txt"), nil
+	return resolvePath(cfg.URLsFile, dir, "urls.txt"), nil
 }
 
 // GetLogPath returns the absolute path to the cron job log file
@@ -205,7 +201,7 @@ func InitConfig() ([]string, error) {
 		return nil, err
 	}
 
-	finalURLPath := resolvePath(cfg.UrlsFile, dir, "urls.txt")
+	finalURLPath := resolvePath(cfg.URLsFile, dir, "urls.txt")
 
 	if err := os.MkdirAll(filepath.Dir(finalURLPath), 0755); err != nil {
 		return nil, fmt.Errorf("could not create config directory: %w", err)

@@ -31,18 +31,18 @@ import (
 type InputType int
 
 const (
-	TypeEmpty InputType = iota
-	TypeFile
+	//TypeEmpty InputType = iota
+	TypeFile InputType = iota
 	TypeURL
-	TypeMixed
+	//TypeMixed
 )
 
 // helper funcs for flag aliase
-func addStringAlias(flagPtr *string, shortName, longName, usage string) {
+func addStringAlias(flagPtr *string, shortName, longName string) {
 	flag.StringVar(flagPtr, shortName, "", fmt.Sprintf("Alias for --%s", longName))
 }
 
-func addBoolAlias(flagPtr *bool, shortName, longName, usage string) {
+func addBoolAlias(flagPtr *bool, shortName, longName string) {
 	flag.BoolVar(flagPtr, shortName, false, fmt.Sprintf("Alias for --%s", longName))
 }
 
@@ -77,37 +77,37 @@ func main() {
 
 	// define flags & aliase
 	fileFlag := flag.String("file", "", "Path to a local .pem/.crt file")
-	addStringAlias(fileFlag, "f", "file", "Path to a local .pem/.crt file")
+	addStringAlias(fileFlag, "f", "file")
 
 	cronFlag := flag.Bool("cron", false, "Create & manage cron jobs")
-	addBoolAlias(cronFlag, "c", "cron", "Create & manage cron jobs")
+	addBoolAlias(cronFlag, "c", "cron")
 
 	ciModeFlag := flag.Bool("ci-mode", false, "CI/CD Mode: Non-interactive, uses urls.txt automatically")
-	addBoolAlias(ciModeFlag, "ci", "ci-mode", "CI/CD Mode: Non-interactive, uses urls.txt automatically")
+	addBoolAlias(ciModeFlag, "ci", "ci-mode")
 
 	listFlag := flag.Bool("list", false, "Show all cron jobs with 'cert-checker'")
-	addBoolAlias(listFlag, "ls", "list", "Show all cron jobs with 'cert-checker'")
+	addBoolAlias(listFlag, "ls", "list")
 
 	logFlag := flag.Bool("log", false, "Show cron job log file")
-	addBoolAlias(logFlag, "l", "log", "Show cron job log file")
+	addBoolAlias(logFlag, "l", "log")
 
 	helpFlag := flag.Bool("help", false, "Show help")
-	addBoolAlias(helpFlag, "h", "help", "Show help")
+	addBoolAlias(helpFlag, "h", "help")
 
 	webFlag := flag.Bool("web", false, "Start web dashboard on localhost:"+port)
-	addBoolAlias(webFlag, "w", "web", "Start web dashboard on localhost:"+port)
+	addBoolAlias(webFlag, "w", "web")
 
 	certFlag := flag.String("cert", "", "Path to SSL certificate file (.pem/.crt)")
 	keyFlag := flag.String("key", "", "Path to SSL private key file (.pem)")
 
 	downloadFlag := flag.Bool("download", false, "Download certificate files to certs directory")
-	addBoolAlias(downloadFlag, "dl", "download", "Download certificate files to certs directory")
+	addBoolAlias(downloadFlag, "dl", "download")
 
 	advancedFlag := flag.Bool("advanced", false, "Show advanced certificate details")
-	addBoolAlias(advancedFlag, "a", "advanced", "Show advanced certificate details")
+	addBoolAlias(advancedFlag, "a", "advanced")
 
 	markdownFlag := flag.Bool("markdown", false, "Saves results in Markdown format")
-	addBoolAlias(markdownFlag, "md", "markdown", "Saves results in Markdown format")
+	addBoolAlias(markdownFlag, "md", "markdown")
 
 	// usage func
 	flag.Usage = func() {

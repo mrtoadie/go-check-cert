@@ -13,7 +13,7 @@ import (
 func EnsureDefaults() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Printf("%sWarning: Could not find home dir: %v%s\n", output.ColYellow, err, output.ColReset)
+		fmt.Printf("%sWarning: could not find home dir: %v%s\n", output.ColYellow, err, output.ColReset)
 		return
 	}
 
@@ -41,6 +41,7 @@ func EnsureDefaults() {
 	}
 }
 
+// createConfigIni creates the config.ini file with default values
 func createConfigIni(path string) {
 	// base is built from the constant so the template stays in sync if ConfigDir changes
 	base := "~/" + constants.ConfigDir
@@ -77,6 +78,7 @@ web_port = %s
 	// removed redundant trailing ColReset
 }
 
+// createDefaultURLs creates the default_urls.txt file with default URLs
 func createDefaultURLs(path string) {
 	content := `# Default URLs for cert-checker
 # These are used if 'default_urls' is not set in config.ini.
@@ -91,5 +93,5 @@ cloudflare.com
 		fmt.Printf("%sError creating default_urls.txt: %v%s\n", output.ColRed, err, output.ColReset)
 		return
 	}
-	fmt.Printf("%sCreated:%s %s (Default URL source)%s\n", output.ColGreen, output.ColReset, path)
+	fmt.Printf("%sCreated:%s %s (Default URL source)\n", output.ColGreen, output.ColReset, path)
 }
