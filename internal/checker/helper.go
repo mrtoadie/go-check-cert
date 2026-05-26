@@ -6,28 +6,9 @@ import (
 	"strings"
 )
 
-// ExtractHostname removes protocols (http/https), paths, and ports
-// to return a clean hostname.
-// examples:
-// "https://example.com/path" -> "example.com"
-// "example.com:8443/api"     -> "example.com"
-// "http://sub.domain.org"    -> "sub.domain.org"
+// ExtractHostname returns the bare hostname from any supported URL format.
 func ExtractHostname(input string) string {
-	if input == "" {
-		return ""
-	}
-	// remove protocol
-	host := strings.TrimPrefix(input, "https://")
-	host = strings.TrimPrefix(host, "http://")
-	// remove path (everything after the first '/')
-	if idx := strings.Index(host, "/"); idx != -1 {
-		host = host[:idx]
-	}
-	// remove port (everything after the first ':')
-	if idx := strings.Index(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-	return host
+	return parseTarget(input).Host
 }
 
 // IsCertFile determines known extensions .pem, .crt, .cer, .key

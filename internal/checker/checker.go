@@ -5,11 +5,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -65,50 +63,26 @@ func CheckCertExpiry(target string, hostname string, timeout time.Duration) Cert
 	return checkRemoteCert(target, hostname, timeout)
 }
 
-// checkRemoteCert handles TLS connections to remote hosts
-func checkRemoteCert(target string, hostname string, timeout time.Duration) CertInfo {
-	info := CertInfo{URL: target}
+// checkRemoteCert handles TLS connections to remote hosts.
+func checkRemoteCert(rawTarget string, _ string, timeout time.Duration) CertInfo {
+	t := parseTarget(rawTarget)
+	info := CertInfo{URL: rawTarget}
 
-	// clean URL for connection
-	url := strings.TrimPrefix(strings.TrimPrefix(target, "https://"), "http://")
-	if !strings.Contains(url, ":") {
-		url += ":443"
-	}
-
-	// extract hostname if not provided
-	if hostname == "" {
-		hostname = ExtractHostname(target)
-	}
-
-	if hostname == "" {
-		info.Error = fmt.Errorf("failed to extract hostname")
+	if t.Host == "" {
+		info.Error = fmt.Errorf("could not parse hostname from %q", rawTarget)
 		info.Status = "ERROR"
 		return info
 	}
 
-	// establish TLS connection
-	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: timeout}, "tcp", url, &tls.Config{
-		InsecureSkipVerify: false, // better false: (https://cwe.mitre.org/data/definitions/295.html)
-		ServerName:         hostname,
-	})
+	certs, err := dialCerts(t, timeout)
 	if err != nil {
 		info.Error = err
 		info.Status = "ERROR"
 		return info
 	}
-	defer conn.Close()
 
-	certs := conn.ConnectionState().PeerCertificates
-	if len(certs) == 0 {
-		info.Error = fmt.Errorf("no certificates found")
-		info.Status = "ERROR"
-		return info
-	}
-
-	info.RawCert = certs[0] // store the leaf cert for potential future use
-
-	// extract info (pass the full chain for validation)
-	return extractCertInfo(certs[0], target, certs, hostname)
+	info.RawCert = certs[0]
+	return extractCertInfo(certs[0], rawTarget, certs, t.Host)
 }
 
 // checkLocalFile handles reading and parsing local certificate files
