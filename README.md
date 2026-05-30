@@ -6,7 +6,7 @@
 **Cert-Checker** is a *privacy-focused* [Go](https://go.dev/) tool that monitors **SSL/TLS certificates** on domains and local files, analyzes expiration dates, and alerts users if any issues are detected.
 It offers both a powerful **command-line** interface for automation and an interactive **web dashboard**.
 ## Latest Release
-May 26, 2026 [Version 1.3](https://github.com/mrtoadie/go-check-cert/releases/tag/v1.3)
+May 30, 2026 [Version 1.4.0](https://github.com/mrtoadie/go-check-cert/releases/tag/v1.4.0)
 
 ## Features
 - **Certificate Verification**
