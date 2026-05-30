@@ -152,7 +152,7 @@ func PrintResults(results []checker.CertInfo) {
 		c := GetColor(r.Status)
 		daysC := getDaysColor(r.DaysRemaining)
 		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
-		fmt.Printf("   Status: %s%-5s%s | Days:%s%3d%s\n", c, r.Status, ColReset, daysC, r.DaysRemaining, ColReset)
+		fmt.Printf(" Status: %s%-7s%s | Days:%s%6d%s\n", c, r.Status, ColReset, daysC, r.DaysRemaining, ColReset)
 		if r.Error != nil {
 			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
 		}
@@ -180,7 +180,7 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 		}
 		fmt.Println(statusLine)
 
-		fmt.Printf("   Days:%s%3d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
+		fmt.Printf("   Days:%s%6d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 
 		// chain details
@@ -190,6 +190,8 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 		}
 
 		if !r.IsChainComplete && r.ChainError != "" {
+			fmt.Printf("   %sError: %s%s\n", ColRed, r.ChainError, ColReset)
+		} else if r.Error != nil {
 			fmt.Printf("   %sError: %s%s\n", ColRed, r.ChainError, ColReset)
 		}
 

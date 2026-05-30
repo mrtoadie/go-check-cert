@@ -241,3 +241,27 @@ func upgradeTLS(conn net.Conn, _ *bufio.Reader, hostname string, timeout time.Du
 	}
 	return certs, nil
 }
+
+// dialTLSInsecure connects without certificate verification.
+// Used only as a fallback to collect cert metadata when verification fails.
+// The original TLS error is preserved in CertInfo.Error by the caller.
+func dialTLSInsecure(dialAddr, hostname string, timeout time.Duration) ([]*x509.Certificate, error) {
+	conn, err := tls.DialWithDialer(
+		&net.Dialer{Timeout: timeout},
+		"tcp", dialAddr,
+		&tls.Config{
+			ServerName:         hostname,
+			InsecureSkipVerify: true, //nolint:gosec // intentional: metadata collection only, not trust decision
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	certs := conn.ConnectionState().PeerCertificates
+	if len(certs) == 0 {
+		return nil, fmt.Errorf("no certificates received")
+	}
+	return certs, nil
+}

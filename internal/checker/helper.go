@@ -21,9 +21,6 @@ func IsCertFile(path string) bool {
 
 // IsFilePath determines existence of the file on the local filesystem
 func IsFilePath(path string) bool {
-	if IsCertFile(path) {
-		return true
-	}
 	_, err := os.Stat(path)
 	return err == nil
 }

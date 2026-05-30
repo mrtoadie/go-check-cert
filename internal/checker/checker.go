@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -74,14 +75,31 @@ func checkRemoteCert(rawTarget string, _ string, timeout time.Duration) CertInfo
 		return info
 	}
 
-	certs, err := dialCerts(t, timeout)
+	// first attempt: full TLS verification
+	certs, err := dialTLS(t.DialAddr, t.Host, timeout)
 	if err != nil {
-		info.Error = err
-		info.Status = "ERROR"
-		return info
+		// verification failed — retry without verification to collect cert metadata
+		// this lets us show EXPIRED/issuer/dates instead of a bare ERROR
+		certs, err2 := dialTLSInsecure(t.DialAddr, t.Host, timeout)
+		if err2 != nil {
+			// can't reach the host at all (network error, port closed)
+			info.Error = err
+			info.Status = "ERROR"
+			return info
+		}
+
+		// we have the cert — extract details and let extractCertInfo set the status
+		result := extractCertInfo(certs[0], rawTarget, certs, t.Host)
+		result.Error = err // preserve original TLS error for display
+		// if TLS verification failed and cert isn't expired, it's still untrusted — mark as ERROR
+		if result.Status != "EXPIRED" {
+			result.Status = "ERROR"
+		}
+		result.IsChainComplete = false
+		result.ChainError = err.Error()
+		return result
 	}
 
-	info.RawCert = certs[0]
 	return extractCertInfo(certs[0], rawTarget, certs, t.Host)
 }
 
@@ -119,13 +137,14 @@ func checkLocalFile(filePath string) CertInfo {
 // extractCertInfo contains the shared logic for extracting metadata from a certificate
 func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certificate, hostname string) CertInfo {
 	info := CertInfo{
-		URL:           source,
-		Issuer:        cert.Issuer.CommonName,
-		Subject:       cert.Subject.CommonName,
-		SerialNumber:  cert.SerialNumber.String(),
-		NotBefore:     cert.NotBefore,
-		NotAfter:      cert.NotAfter,
-		DaysRemaining: int(cert.NotAfter.UTC().Sub(time.Now().UTC()).Hours() / 24),
+		URL:          source,
+		Issuer:       cert.Issuer.CommonName,
+		Subject:      cert.Subject.CommonName,
+		SerialNumber: cert.SerialNumber.String(),
+		NotBefore:    cert.NotBefore,
+		NotAfter:     cert.NotAfter,
+		//DaysRemaining: int(cert.NotAfter.UTC().Sub(time.Now().UTC()).Hours() / 24),
+		DaysRemaining: int(math.Floor(cert.NotAfter.UTC().Sub(time.Now().UTC()).Hours() / 24)),
 		RawCert:       cert,
 	}
 
@@ -135,6 +154,7 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 		info.IsChainComplete = true
 		// root issuer is the last cert in the chain
 		info.RootIssuer = chain[len(chain)-1].Issuer.CommonName
+		info.IsSelfSigned = cert.Issuer.String() == cert.Subject.String()
 	} else {
 		// local file or single cert
 		info.ChainLength = 1

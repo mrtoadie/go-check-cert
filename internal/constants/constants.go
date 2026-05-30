@@ -5,7 +5,7 @@ import "time"
 
 const (
 	AppName        = "cert-checker"
-	Version        = "1.3"
+	Version        = "1.4.0"
 	ConfigDir      = ".config/" + AppName
 	CronMarker     = "# cert-checker"
 	DefaultWebPort = "8080"

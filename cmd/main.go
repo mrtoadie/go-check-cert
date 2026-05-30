@@ -1,9 +1,8 @@
-// Version 1.3
 // Autor: 	MrToadie
 // GitHub: 	https://github.com/mrtoadie/
 // Repo: 	https://github.com/mrtoadie/go-check-cert
 // License: MIT
-// last modification: May 26 2026
+// last modification: May 29 2026
 package main
 
 import (
