@@ -201,12 +201,10 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 
 		fmt.Printf("   Issuer: %s\n", r.Issuer)
 		fmt.Printf("   Serial Number: %s\n", r.SerialNumber)
-
+		fmt.Printf("   Key: %s %d-bit | Sig: %s\n", r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
 		// key info
 		switch r.KeyAlgorithm {
 		case "RSA":
-			fmt.Printf("   Key: %s %d-bit | Sig: %s\n",
-				r.KeyAlgorithm, r.KeySize, r.SignatureAlgorithm)
 			if r.KeySize < 2048 {
 				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
 			}
@@ -219,6 +217,12 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 		case "ECDSA":
 			if r.KeySize < 256 {
 				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+			}
+			if r.KeySize >= 384 {
+				fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+			}
+			if r.KeySize == 256 {
+				fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
 			}
 		}
 
