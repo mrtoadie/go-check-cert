@@ -28,14 +28,14 @@ type CronJob struct {
 func ScheduleMain() {
 	var action string
 
-	fmt.Printf("%s=== CRON JOB SETUP ===%s\n", output.ColBlue, output.ColReset)
+	fmt.Printf("%s=== CRON JOB SETUP ===%s\n", constants.ColBlue, constants.ColReset)
 
 	urlsPath, _ := config.GetConfigPath()
 	logPath, _ := config.GetLogPath()
 
-	fmt.Printf("%sNote: This job automatically checks the URLs from your configuration file.%s\n", output.ColYellow, output.ColReset)
-	fmt.Printf("%sURLs File: %s%s\n", output.ColBlue, urlsPath, output.ColReset)
-	fmt.Printf("%sLog File:  %s%s\n\n", output.ColBlue, logPath, output.ColReset)
+	fmt.Printf("%sNote: This job automatically checks the URLs from your configuration file.%s\n", constants.ColYellow, constants.ColReset)
+	fmt.Printf("%sURLs File: %s%s\n", constants.ColBlue, urlsPath, constants.ColReset)
+	fmt.Printf("%sLog File:  %s%s\n\n", constants.ColBlue, logPath, constants.ColReset)
 
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -52,7 +52,7 @@ func ScheduleMain() {
 	)
 
 	if err := form.Run(); err != nil {
-		fmt.Printf("%sAbort.%s\n", output.ColRed, output.ColReset)
+		fmt.Printf("%sAbort.%s\n", constants.ColRed, constants.ColReset)
 		return
 	}
 
@@ -96,10 +96,10 @@ func CreateCron() {
 		confirm        bool
 	)
 
-	fmt.Printf("%s=== CREATE CRON JOB ===%s\n\n", output.ColBlue, output.ColReset)
+	fmt.Printf("%s=== CREATE CRON JOB ===%s\n\n", constants.ColBlue, constants.ColReset)
 	logPath, _ := config.GetLogPath()
 
-	fmt.Printf("%sInfo: Cron job will use:%s\n", output.ColBlue, output.ColReset)
+	fmt.Printf("%sInfo: Cron job will use:%s\n", constants.ColBlue, constants.ColReset)
 	fmt.Printf("  URLs: %s\n", logPath)
 
 	form := huh.NewForm(
@@ -143,7 +143,7 @@ func CreateCron() {
 	)
 
 	if err := form.Run(); err != nil {
-		fmt.Printf("%sAbort.%s\n", output.ColRed, output.ColReset)
+		fmt.Printf("%sAbort.%s\n", constants.ColRed, constants.ColReset)
 		return
 	}
 
@@ -156,7 +156,7 @@ func CreateCron() {
 	binaryPath := getBinaryPathSafe()
 
 	if err := installCronJob(binaryPath, cronExpression); err != nil {
-		fmt.Printf("%sError: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError: %v%s\n", constants.ColRed, err, constants.ColReset)
 		return
 	}
 }
@@ -194,7 +194,7 @@ func installCronJob(binaryPath, cronExpression string) error {
 	}
 
 	if strings.Contains(currentCrontab, binaryPath) && strings.Contains(currentCrontab, "-ci") {
-		fmt.Printf("%sEntry already exists.%s\n", output.ColYellow, output.ColReset)
+		fmt.Printf("%sEntry already exists.%s\n", constants.ColYellow, constants.ColReset)
 		fmt.Println("No changes made.")
 		return nil
 	}
@@ -211,10 +211,10 @@ func installCronJob(binaryPath, cronExpression string) error {
 		return fmt.Errorf("setting crontab failed: %w", err)
 	}
 
-	fmt.Printf("\n%sCron job created successfully!%s\n", output.ColGreen, output.ColReset)
+	fmt.Printf("\n%sCron job created successfully!%s\n", constants.ColGreen, constants.ColReset)
 	fmt.Printf("Cron-Expression: %s\n", cronExpression)
 	fmt.Printf("Command: %s\n", cronEntry)
-	fmt.Printf("%sLog: ./cert-checker -log OR tail -f %s%s\n", output.ColYellow, logFile, output.ColReset)
+	fmt.Printf("%sLog: ./cert-checker -log OR tail -f %s%s\n", constants.ColYellow, logFile, constants.ColReset)
 	return nil
 }
 
@@ -252,24 +252,24 @@ func getCronJobs() ([]CronJob, error) {
 
 // ListAndManageJobs lists and manages cron jobs
 func ListAndManageJobs() {
-	fmt.Printf("%s=== CERTIFICATE CHECK CRON JOBS ===%s\n\n", output.ColBlue, output.ColReset)
+	fmt.Printf("%s=== CERTIFICATE CHECK CRON JOBS ===%s\n\n", constants.ColBlue, constants.ColReset)
 
 	jobs, err := getCronJobs()
 	if err != nil {
-		fmt.Printf("%s%s%s\n", output.ColYellow, err.Error(), output.ColReset)
+		fmt.Printf("%s%s%s\n", constants.ColYellow, err.Error(), constants.ColReset)
 		fmt.Println("Create one with: ./cert-checker -cron")
 		return
 	}
 
 	if len(jobs) == 0 {
-		fmt.Printf("%sNo cron jobs with 'cert-checker' found.%s\n", output.ColYellow, output.ColReset)
+		fmt.Printf("%sNo cron jobs with 'cert-checker' found.%s\n", constants.ColYellow, constants.ColReset)
 		fmt.Println("Create one with: ./cert-checker -cron")
 		return
 	}
 
-	fmt.Printf("%sTotal: %d job(s) found.%s\n\n", output.ColBlue, len(jobs), output.ColReset)
+	fmt.Printf("%sTotal: %d job(s) found.%s\n\n", constants.ColBlue, len(jobs), constants.ColReset)
 	for i, job := range jobs {
-		fmt.Printf("%s%d.%s %s\n", output.ColGreen, i+1, output.ColReset, job.Comment)
+		fmt.Printf("%s%d.%s %s\n", constants.ColGreen, i+1, constants.ColReset, job.Comment)
 		fmt.Printf("   %s\n", job.Command)
 		fmt.Println()
 	}
@@ -289,7 +289,7 @@ func ListAndManageJobs() {
 	)
 
 	if err := form.Run(); err != nil {
-		fmt.Printf("%sAbort.%s\n", output.ColRed, output.ColReset)
+		fmt.Printf("%sAbort.%s\n", constants.ColRed, constants.ColReset)
 		return
 	}
 
@@ -323,7 +323,7 @@ func ListAndManageJobs() {
 		)
 
 		if err := form.Run(); err != nil {
-			fmt.Printf("%sAbort.%s\n", output.ColRed, output.ColReset)
+			fmt.Printf("%sAbort.%s\n", constants.ColRed, constants.ColReset)
 			return
 		}
 
@@ -342,7 +342,7 @@ func ListAndManageJobs() {
 		)
 
 		if err := confirmForm.Run(); err != nil {
-			fmt.Printf("%sAbort.%s\n", output.ColRed, output.ColReset)
+			fmt.Printf("%sAbort.%s\n", constants.ColRed, constants.ColReset)
 			return
 		}
 
@@ -352,7 +352,7 @@ func ListAndManageJobs() {
 		}
 
 		if err := removeSelectedCronJobs(selectedJobs); err != nil {
-			fmt.Printf("%sError: %v%s\n", output.ColRed, err, output.ColReset)
+			fmt.Printf("%sError: %v%s\n", constants.ColRed, err, constants.ColReset)
 			return
 		}
 	}
@@ -411,7 +411,7 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 		return fmt.Errorf("crontab update failed: %w", err)
 	}
 
-	fmt.Printf("\n%s%d cron job(s) removed successfully!%s\n", output.ColGreen, len(selectedIndices), output.ColReset)
+	fmt.Printf("\n%s%d cron job(s) removed successfully!%s\n", constants.ColGreen, len(selectedIndices), constants.ColReset)
 	return nil
 }
 
@@ -419,12 +419,12 @@ func removeSelectedCronJobs(selectedIndices []int) error {
 func ViewLogs() {
 	logFile, err := config.GetLogPath()
 	if err != nil {
-		fmt.Printf("%sError getting log path: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError getting log path: %v%s\n", constants.ColRed, err, constants.ColReset)
 		return
 	}
 
 	if _, err := os.Stat(logFile); os.IsNotExist(err) {
-		fmt.Printf("%sNo log file found yet.%s\n", output.ColYellow, output.ColReset)
+		fmt.Printf("%sNo log file found yet.%s\n", constants.ColYellow, constants.ColReset)
 		fmt.Println("Logs are created when a Cron job runs.")
 		fmt.Printf("Expected at: %s\n", logFile)
 		fmt.Println("\nPress Enter to continue...")
@@ -438,6 +438,6 @@ func ViewLogs() {
 	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("%sError opening pager: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError opening pager: %v%s\n", constants.ColRed, err, constants.ColReset)
 	}
 }

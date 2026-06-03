@@ -12,14 +12,6 @@ import (
 	"time"
 )
 
-const (
-	ColReset  = "\033[0m"
-	ColRed    = "\033[31m"
-	ColGreen  = "\033[32m"
-	ColYellow = "\033[33m"
-	ColBlue   = "\033[34m"
-)
-
 // ReportData is the structure for JSON export
 type ReportData struct {
 	GeneratedAt string       `json:"generated_at"`
@@ -108,23 +100,23 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 func GetColor(status string) string {
 	switch status {
 	case "VALID":
-		return ColGreen
+		return constants.ColGreen
 	case "SOON", "WARNING":
-		return ColYellow
+		return constants.ColYellow
 	default:
-		return ColRed
+		return constants.ColRed
 	}
 }
 
 // getDaysColor returns the ANSI escape code for the given days-remaining value
 func getDaysColor(days int) string {
-	if days < 30 {
-		return ColRed
+	if days < constants.CriticalThresholdDays {
+		return constants.ColRed
 	}
-	if days < 60 {
-		return ColYellow
+	if days < constants.WarningThresholdDays {
+		return constants.ColYellow
 	}
-	return ColGreen
+	return constants.ColGreen
 }
 
 // printSummary prints the status count footer shared by all result views.
@@ -136,63 +128,63 @@ func printSummary(results []checker.CertInfo) {
 	count := func(status string) int { return counts[status] }
 
 	fmt.Printf(" %sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
-		ColGreen, count("VALID"), ColReset,
-		ColYellow, count("WARNING"), ColReset,
-		ColRed, count("EXPIRED"), ColReset,
-		ColRed, count("ERROR"), ColReset)
-	fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
+		constants.ColGreen, count("VALID"), constants.ColReset,
+		constants.ColYellow, count("WARNING"), constants.ColReset,
+		constants.ColRed, count("EXPIRED"), constants.ColReset,
+		constants.ColRed, count("ERROR"), constants.ColReset)
+	fmt.Printf("%s----------------------------------------%s\n", constants.ColBlue, constants.ColReset)
 }
 
 // PrintResults prints a compact one-line-per-cert summary to stdout
 func PrintResults(results []checker.CertInfo) {
-	fmt.Printf("%s=== RESULTS ===%s\n\n", ColBlue, ColReset)
+	fmt.Printf("%s=== RESULTS ===%s\n\n", constants.ColBlue, constants.ColReset)
 
 	for i, r := range results {
 		num := i + 1
 		c := GetColor(r.Status)
 		daysC := getDaysColor(r.DaysRemaining)
-		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
-		fmt.Printf(" Status: %s%-7s%s | Days:%s%6d%s\n", c, r.Status, ColReset, daysC, r.DaysRemaining, ColReset)
+		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, constants.ColReset)
+		fmt.Printf(" Status: %s%-7s%s | Days:%s%6d%s\n", c, r.Status, constants.ColReset, daysC, r.DaysRemaining, constants.ColReset)
 		if r.Error != nil {
-			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
+			fmt.Printf("   Error: %s%s%s\n", constants.ColRed, r.Error, constants.ColReset)
 		}
-		fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
+		fmt.Printf("%s----------------------------------------%s\n", constants.ColBlue, constants.ColReset)
 	}
 	printSummary(results)
 }
 
 // PrintAdvancedResults prints detailed certificate information to stdout
 func PrintAdvancedResults(results []checker.CertInfo) {
-	fmt.Printf("%s=== RESULTS ===%s\n\n", ColBlue, ColReset)
+	fmt.Printf("%s=== RESULTS ===%s\n\n", constants.ColBlue, constants.ColReset)
 
 	for i, r := range results {
 		num := i + 1
 		c := GetColor(r.Status)
 		daysC := getDaysColor(r.DaysRemaining)
 
-		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, ColReset)
+		fmt.Printf(" %d. %s%s%s\n", num, c, r.URL, constants.ColReset)
 
-		statusLine := fmt.Sprintf(" Status: %s%-5s%s", c, r.Status, ColReset)
+		statusLine := fmt.Sprintf(" Status: %s%-5s%s", c, r.Status, constants.ColReset)
 		if !r.IsChainComplete {
-			statusLine += fmt.Sprintf(" |%s CHAIN ISSUE%s", ColRed, ColReset)
+			statusLine += fmt.Sprintf(" |%s CHAIN ISSUE%s", constants.ColRed, constants.ColReset)
 		} else {
-			statusLine += fmt.Sprintf(" |%s CHAIN VALID%s", ColGreen, ColReset)
+			statusLine += fmt.Sprintf(" |%s CHAIN VALID%s", constants.ColGreen, constants.ColReset)
 		}
 		fmt.Println(statusLine)
 
-		fmt.Printf("   Days:%s%6d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, ColReset,
+		fmt.Printf("   Days:%s%6d%s | Valid: %s → %s\n", daysC, r.DaysRemaining, constants.ColReset,
 			r.NotBefore.Format("02. Jan 2006"), r.NotAfter.Format("02. Jan 2006"))
 
 		// chain details
 		fmt.Printf("   Chain Length: %d Certificates\n", r.ChainLength)
 		if r.IsSelfSigned {
-			fmt.Printf("   %sSelf-Signed certificate%s\n", ColYellow, ColReset)
+			fmt.Printf("   %sSelf-Signed certificate%s\n", constants.ColYellow, constants.ColReset)
 		}
 
 		if !r.IsChainComplete && r.ChainError != "" {
-			fmt.Printf("   %sError: %s%s\n", ColRed, r.ChainError, ColReset)
+			fmt.Printf("   %sError: %s%s\n", constants.ColRed, r.ChainError, constants.ColReset)
 		} else if r.Error != nil {
-			fmt.Printf("   %sError: %s%s\n", ColRed, r.ChainError, ColReset)
+			fmt.Printf("   %sError: %s%s\n", constants.ColRed, r.ChainError, constants.ColReset)
 		}
 
 		if r.RootIssuer != "" {
@@ -206,23 +198,23 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 		switch r.KeyAlgorithm {
 		case "RSA":
 			if r.KeySize < 2048 {
-				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", constants.ColYellow, r.KeySize, constants.ColReset)
 			}
 			if r.KeySize >= 4096 {
-				fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+				fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", constants.ColGreen, r.KeySize, constants.ColReset)
 			}
 			if r.KeySize == 2048 {
-				fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+				fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", constants.ColGreen, r.KeySize, constants.ColReset)
 			}
 		case "ECDSA":
 			if r.KeySize < 256 {
-				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", ColYellow, r.KeySize, ColReset)
+				fmt.Printf("   %sWarning: Weak key size (%d bits)%s\n", constants.ColYellow, r.KeySize, constants.ColReset)
 			}
 			if r.KeySize >= 384 {
-				fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+				fmt.Printf("   %sInfo: Strong key size (%d bits)%s\n", constants.ColGreen, r.KeySize, constants.ColReset)
 			}
 			if r.KeySize == 256 {
-				fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", ColGreen, r.KeySize, ColReset)
+				fmt.Printf("   %sInfo: Acceptable key size (%d bits)%s\n", constants.ColGreen, r.KeySize, constants.ColReset)
 			}
 		}
 
@@ -236,9 +228,9 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 		}
 
 		if r.Error != nil {
-			fmt.Printf("   Error: %s%s%s\n", ColRed, r.Error, ColReset)
+			fmt.Printf("   Error: %s%s%s\n", constants.ColRed, r.Error, constants.ColReset)
 		}
-		fmt.Printf("%s----------------------------------------%s\n", ColBlue, ColReset)
+		fmt.Printf("%s----------------------------------------%s\n", constants.ColBlue, constants.ColReset)
 	}
 	printSummary(results)
 }

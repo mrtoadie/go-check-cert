@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"bytes"
 	"cert-checker/internal/constants"
-	"cert-checker/internal/output"
 	"cert-checker/internal/parser"
 	"fmt"
 	"os"
@@ -57,7 +56,7 @@ func loadConfig() {
 
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Printf("%sWarning: could not find home directory: %v%s\n", output.ColYellow, err, output.ColReset)
+			fmt.Printf("%sWarning: could not find home directory: %v%s\n", constants.ColYellow, err, constants.ColReset)
 			return
 		}
 
@@ -66,7 +65,7 @@ func loadConfig() {
 		// os.ReadFile returns IsNotExist — treat that as "no config yet", not an error
 		data, err := os.ReadFile(filepath.Join(configDir, "config.ini"))
 		if err != nil && !os.IsNotExist(err) {
-			fmt.Printf("%sError reading config.ini: %v%s\n", output.ColRed, err, output.ColReset)
+			fmt.Printf("%sError reading config.ini: %v%s\n", constants.ColRed, err, constants.ColReset)
 			return
 		}
 
@@ -115,7 +114,7 @@ func loadConfig() {
 		if len(cfg.DefaultURLs) == 0 {
 			urls, err := parser.ReadURLsFromFile(filepath.Join(configDir, "default_urls.txt"))
 			if err != nil && !os.IsNotExist(err) {
-				fmt.Printf("%sWarning: could not read default_urls.txt: %v%s\n", output.ColYellow, err, output.ColReset)
+				fmt.Printf("%sWarning: could not read default_urls.txt: %v%s\n", constants.ColYellow, err, constants.ColReset)
 			}
 			cfg.DefaultURLs = urls
 		}
@@ -223,7 +222,7 @@ func InitConfig() ([]string, error) {
 	}
 
 	// first run: create the file
-	fmt.Printf("%sFirst run: creating URL list at %s%s\n", output.ColBlue, finalURLPath, output.ColReset)
+	fmt.Printf("%sFirst run: creating URL list at %s%s\n", constants.ColBlue, finalURLPath, constants.ColReset)
 	file, err := os.Create(finalURLPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not create URL file: %w", err)
@@ -242,8 +241,8 @@ func InitConfig() ([]string, error) {
 		return nil, fmt.Errorf("could not flush URL file: %w", err)
 	}
 
-	fmt.Printf("%sCreated:%s %s\n", output.ColGreen, output.ColReset, finalURLPath)
-	fmt.Printf("%sTip:%s Edit this file to add your own URLs.\n\n", output.ColYellow, output.ColReset)
+	fmt.Printf("%sCreated:%s %s\n", constants.ColGreen, constants.ColReset, finalURLPath)
+	fmt.Printf("%sTip:%s Edit this file to add your own URLs.\n\n", constants.ColYellow, constants.ColReset)
 
 	return defaultURLs, nil
 }

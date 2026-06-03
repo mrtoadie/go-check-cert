@@ -3,7 +3,6 @@ package config
 
 import (
 	"cert-checker/internal/constants"
-	"cert-checker/internal/output"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,13 +12,13 @@ import (
 func EnsureDefaults() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Printf("%sWarning: could not find home dir: %v%s\n", output.ColYellow, err, output.ColReset)
+		fmt.Printf("%sWarning: could not find home dir: %v%s\n", constants.ColYellow, err, constants.ColReset)
 		return
 	}
 
 	configDir := filepath.Join(homeDir, constants.ConfigDir)
 	if err := os.MkdirAll(configDir, 0755); err != nil {
-		fmt.Printf("%sError creating config dir: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError creating config dir: %v%s\n", constants.ColRed, err, constants.ColReset)
 		return
 	}
 
@@ -32,7 +31,7 @@ func EnsureDefaults() {
 	// prevent the others from being created (previously used early returns)
 	for _, dir := range []string{"logs", "reports", "certs"} {
 		if err := os.MkdirAll(filepath.Join(configDir, dir), 0755); err != nil {
-			fmt.Printf("%sError creating %s dir: %v%s\n", output.ColRed, dir, err, output.ColReset)
+			fmt.Printf("%sError creating %s dir: %v%s\n", constants.ColRed, dir, err, constants.ColReset)
 		}
 	}
 
@@ -70,11 +69,11 @@ web_port = %s
 `, base, base, base, base, constants.DefaultWebPort, constants.DefaultWebPort)
 
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-		fmt.Printf("%sError creating config.ini: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError creating config.ini: %v%s\n", constants.ColRed, err, constants.ColReset)
 		return
 	}
-	fmt.Printf("%sCreated:%s %s\n", output.ColGreen, output.ColReset, path)
-	fmt.Printf("%sTip:%s Edit this file to customize settings.\n\n", output.ColYellow, output.ColReset)
+	fmt.Printf("%sCreated:%s %s\n", constants.ColGreen, constants.ColReset, path)
+	fmt.Printf("%sTip:%s Edit this file to customize settings.\n\n", constants.ColYellow, constants.ColReset)
 	// removed redundant trailing ColReset
 }
 
@@ -90,8 +89,8 @@ go.dev
 cloudflare.com
 `
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-		fmt.Printf("%sError creating default_urls.txt: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError creating default_urls.txt: %v%s\n", constants.ColRed, err, constants.ColReset)
 		return
 	}
-	fmt.Printf("%sCreated:%s %s (Default URL source)\n", output.ColGreen, output.ColReset, path)
+	fmt.Printf("%sCreated:%s %s (Default URL source)\n", constants.ColGreen, constants.ColReset, path)
 }

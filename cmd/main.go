@@ -67,8 +67,8 @@ func main() {
 	for _, arg := range os.Args[1:] {
 		if strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") {
 			if !validFlags[arg] {
-				fmt.Println(output.ColRed, "Error: flag provided but not defined:", arg, output.ColReset)
-				fmt.Println(output.ColYellow, "Hint: Use -h or -help for usage information.", output.ColReset)
+				fmt.Println(constants.ColRed, "Error: flag provided but not defined:", arg, constants.ColReset)
+				fmt.Println(constants.ColYellow, "Hint: Use -h or -help for usage information.", constants.ColReset)
 				os.Exit(2)
 			}
 		}
@@ -110,7 +110,7 @@ func main() {
 
 	// usage func
 	flag.Usage = func() {
-		fmt.Println(output.ColGreen, "\n Examples:", output.ColReset)
+		fmt.Println(constants.ColGreen, "\n Examples:", constants.ColReset)
 		fmt.Println("  cert-checker -file cert.pem")
 		fmt.Println("  cert-checker -cron")
 		fmt.Println("  cert-checker -log")
@@ -148,42 +148,42 @@ func main() {
 	}
 
 	if *helpFlag {
-		fmt.Println(output.ColBlue, "\ncert-checker "+constants.Version, output.ColReset)
+		fmt.Println(constants.ColBlue, "\ncert-checker "+constants.Version, constants.ColReset)
 
-		fmt.Println(output.ColYellow, "\n Usage: cert-checker [options]", output.ColReset)
-		fmt.Println(output.ColBlue, "\n Options:", output.ColReset)
+		fmt.Println(constants.ColYellow, "\n Usage: cert-checker [options]", constants.ColReset)
+		fmt.Println(constants.ColBlue, "\n Options:", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -f, -file string", output.ColReset)
-		fmt.Println(output.ColBlue, "         Path to a local .pem/.crt file", output.ColReset)
+		fmt.Println(constants.ColYellow, " -f, -file string", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Path to a local .pem/.crt file", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -c, -cron", output.ColReset)
-		fmt.Println(output.ColBlue, "         Create & manage cron jobs", output.ColReset)
+		fmt.Println(constants.ColYellow, " -c, -cron", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Create & manage cron jobs", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -dl, -download", output.ColReset)
-		fmt.Println(output.ColBlue, "         Download valid certificates to certs folder", output.ColReset)
+		fmt.Println(constants.ColYellow, " -dl, -download", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Download valid certificates to certs folder", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -ls, -list", output.ColReset)
-		fmt.Println(output.ColBlue, "         Show / remove cron jobs", output.ColReset)
+		fmt.Println(constants.ColYellow, " -ls, -list", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Show / remove cron jobs", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -l, -log", output.ColReset)
-		fmt.Println(output.ColBlue, "         Show cron job log file", output.ColReset)
+		fmt.Println(constants.ColYellow, " -l, -log", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Show cron job log file", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -ci, -ci-mode", output.ColReset)
-		fmt.Println(output.ColBlue, "         CI/CD Mode: Non-interactive, uses urls.txt automatically", output.ColReset)
+		fmt.Println(constants.ColYellow, " -ci, -ci-mode", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         CI/CD Mode: Non-interactive, uses urls.txt automatically", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -w, -web", output.ColReset)
-		fmt.Println(output.ColBlue, "         Start web dashboard on localhost:8080 (default)", output.ColReset)
+		fmt.Println(constants.ColYellow, " -w, -web", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Start web dashboard on localhost:8080 (default)", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -cert", output.ColReset)
-		fmt.Println(output.ColBlue, "         Path to SSL certificate file (.pem/.crt)", output.ColReset)
+		fmt.Println(constants.ColYellow, " -cert", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Path to SSL certificate file (.pem/.crt)", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -key", output.ColReset)
-		fmt.Println(output.ColBlue, "         Path to SSL private key file (.pem)", output.ColReset)
+		fmt.Println(constants.ColYellow, " -key", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Path to SSL private key file (.pem)", constants.ColReset)
 
-		fmt.Println(output.ColYellow, " -h, -help", output.ColReset)
-		fmt.Println(output.ColBlue, "         Show this help message", output.ColReset)
+		fmt.Println(constants.ColYellow, " -h, -help", constants.ColReset)
+		fmt.Println(constants.ColBlue, "         Show this help message", constants.ColReset)
 
-		fmt.Println(output.ColBlue, "\n Web: https://github.com/mrtoadie/go-check-cert", output.ColReset)
+		fmt.Println(constants.ColBlue, "\n Web: https://github.com/mrtoadie/go-check-cert", constants.ColReset)
 
 		flag.Usage()
 		os.Exit(0)
@@ -197,7 +197,7 @@ func main() {
 	if *fileFlag != "" {
 		// flag mode explicit file
 		if _, err := os.Stat(*fileFlag); os.IsNotExist(err) {
-			fmt.Printf("%sError: File not found: %s%s\n", output.ColRed, *fileFlag, output.ColReset)
+			fmt.Printf("%sError: File not found: %s%s\n", constants.ColRed, *fileFlag, constants.ColReset)
 			os.Exit(1)
 		}
 		urls = []string{*fileFlag}
@@ -206,7 +206,7 @@ func main() {
 		// interactive mode
 		urlsFromConfig, err := config.InitConfig()
 		if err != nil {
-			fmt.Printf("%sConfiguration error: %v%s\n", output.ColRed, err, output.ColReset)
+			fmt.Printf("%sConfiguration error: %v%s\n", constants.ColRed, err, constants.ColReset)
 			os.Exit(1)
 		}
 		// huh input form
@@ -221,7 +221,7 @@ func main() {
 		).Run()
 
 		if err != nil {
-			fmt.Printf("%sAbort.%s\n", output.ColRed, output.ColReset)
+			fmt.Printf("%sAbort.%s\n", constants.ColRed, constants.ColReset)
 			return
 		}
 
@@ -230,22 +230,22 @@ func main() {
 			// empty > config file
 			urls = urlsFromConfig
 			inputType = TypeURL
-			fmt.Printf("%sUsing %d default URLs from config...%s\n\n", output.ColGreen, len(urls), output.ColReset)
+			fmt.Printf("%sUsing %d default URLs from config...%s\n\n", constants.ColGreen, len(urls), constants.ColReset)
 		} else {
 			// not empty > parse and determine type
 			urls, err = parser.ParseInput(input)
 			if err != nil || len(urls) == 0 {
-				fmt.Printf("%sError: No URLs found (%v)%s\n", output.ColRed, err, output.ColReset)
+				fmt.Printf("%sError: No URLs found (%v)%s\n", constants.ColRed, err, constants.ColReset)
 				os.Exit(1)
 			}
 
 			// determine type based on the first item using centralized logic
 			if checker.IsCertFile(urls[0]) {
 				inputType = TypeFile
-				fmt.Printf("%sDetected: Local certificate file%s\n\n", output.ColBlue, output.ColReset)
+				fmt.Printf("%sDetected: Local certificate file%s\n\n", constants.ColBlue, constants.ColReset)
 			} else {
 				inputType = TypeURL
-				fmt.Printf("%sDetected: Remote URL(s)%s\n\n", output.ColGreen, output.ColReset)
+				fmt.Printf("%sDetected: Remote URL(s)%s\n\n", constants.ColGreen, constants.ColReset)
 			}
 		}
 	}
@@ -297,21 +297,21 @@ func main() {
 
 	// wait until all goroutines are finished
 	if err := g.Wait(); err != nil {
-		fmt.Printf("%sBatch processing interrupted: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sBatch processing interrupted: %v%s\n", constants.ColRed, err, constants.ColReset)
 		// even if a timeout occurred, show the previous results
 	}
 
 	// download certs if requested
 	if *downloadFlag {
-		fmt.Printf("\n%sDownloading valid certificates...%s\n", output.ColBlue, output.ColReset)
+		fmt.Printf("\n%sDownloading valid certificates...%s\n", constants.ColBlue, constants.ColReset)
 		certDir, err := config.GetCertPath()
 
 		if err != nil {
-			fmt.Printf("%sError determining cert directory: %v%s\n", output.ColRed, err, output.ColReset)
+			fmt.Printf("%sError determining cert directory: %v%s\n", constants.ColRed, err, constants.ColReset)
 		} else {
 			// make sure folder
 			if err := os.MkdirAll(certDir, 0755); err != nil {
-				fmt.Printf("%sWarning: Could not create cert dir: %v%s\n", output.ColYellow, err, output.ColReset)
+				fmt.Printf("%sWarning: Could not create cert dir: %v%s\n", constants.ColYellow, err, constants.ColReset)
 			} else {
 				savedCount := 0
 				for _, r := range results {
@@ -326,13 +326,13 @@ func main() {
 						}
 						if err := checker.SaveCert(r.RawCert, hostname, certDir); err == nil {
 							savedCount++
-							fmt.Printf("%sSaved:%s %s/%s.pem\n", output.ColGreen, output.ColReset, certDir, hostname)
+							fmt.Printf("%sSaved:%s %s/%s.pem\n", constants.ColGreen, constants.ColReset, certDir, hostname)
 						} else {
-							fmt.Printf("%sError saving %s: %v%s\n", output.ColRed, hostname, err, output.ColReset)
+							fmt.Printf("%sError saving %s: %v%s\n", constants.ColRed, hostname, err, constants.ColReset)
 						}
 					}
 				}
-				fmt.Printf("%sDownloaded %d certificate(s).%s\n", output.ColBlue, savedCount, output.ColReset)
+				fmt.Printf("%sDownloaded %d certificate(s).%s\n", constants.ColBlue, savedCount, constants.ColReset)
 			}
 		}
 	}
@@ -366,7 +366,7 @@ func main() {
 	}
 
 	if err := saveReport(results); err != nil {
-		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError saving: %v%s\n", constants.ColRed, err, constants.ColReset)
 		return
 	}
 }
@@ -375,16 +375,16 @@ func runCIMode() {
 	// load URLs from config file
 	urls, err := config.InitConfig()
 	if err != nil {
-		fmt.Printf("%sConfiguration error: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sConfiguration error: %v%s\n", constants.ColRed, err, constants.ColReset)
 		os.Exit(1)
 	}
 
 	if len(urls) == 0 {
-		fmt.Printf("%sNo URLs found in configuration file.%s\n", output.ColYellow, output.ColReset)
+		fmt.Printf("%sNo URLs found in configuration file.%s\n", constants.ColYellow, constants.ColReset)
 		os.Exit(1)
 	}
 
-	fmt.Printf("%sCheck %d URLs from urls.txt...%s\n\n", output.ColBlue, len(urls), output.ColReset)
+	fmt.Printf("%sCheck %d URLs from urls.txt...%s\n\n", constants.ColBlue, len(urls), constants.ColReset)
 
 	timeoutPerRequest := time.Duration(config.GetTimeout()) * time.Second
 
@@ -404,7 +404,7 @@ func runCIMode() {
 
 	// save JSON
 	if err := saveReport(results); err != nil {
-		fmt.Printf("%sError saving: %v%s\n", output.ColRed, err, output.ColReset)
+		fmt.Printf("%sError saving: %v%s\n", constants.ColRed, err, constants.ColReset)
 		os.Exit(3)
 	}
 
@@ -430,6 +430,6 @@ func saveReport(results []checker.CertInfo) error {
 		return fmt.Errorf("could not save JSON: %w", err)
 	}
 
-	fmt.Printf("\n%sSaved successfully to: %s%s\n", output.ColGreen, filename, output.ColReset)
+	fmt.Printf("\n%sSaved successfully to: %s%s\n", constants.ColGreen, filename, constants.ColReset)
 	return nil
 }

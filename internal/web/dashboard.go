@@ -74,8 +74,11 @@ func StartServer(port, certFile, keyFile, Version string) {
 		}
 
 		server := &http.Server{
-			Addr:      addr,
-			TLSConfig: tlsConfig,
+			Addr:         addr,
+			TLSConfig:    tlsConfig,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  60 * time.Second,
 		}
 
 		// https mode
