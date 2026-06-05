@@ -2,6 +2,7 @@
 package checker
 
 import (
+	"cert-checker/internal/constants"
 	"os"
 	"strings"
 )
@@ -35,9 +36,9 @@ func CalculateExitCode(results []CertInfo) int {
 
 	for _, r := range results {
 		switch r.Status {
-		case "EXPIRED", "ERROR":
+		case constants.StatusExpired, constants.StatusError:
 			return 2 // return immediately as this is the highest priority
-		case "WARNING", "SOON":
+		case constants.StatusWarning, constants.StatusSoon:
 			hasWarning = true
 		}
 	}

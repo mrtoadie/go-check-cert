@@ -3,10 +3,9 @@ package parser
 
 import (
 	"bufio"
+	"cert-checker/internal/checker"
 	"os"
 	"strings"
-
-	"cert-checker/internal/checker"
 )
 
 // ParseInput decides centrally whether the input is a file or a list of URLs
@@ -20,10 +19,14 @@ func ParseInput(input string) ([]string, error) {
 	// central decision: Is it a file?
 	if checker.IsFilePath(input) {
 		// if it's a file, check if it's a certificate or a URL list
-		if strings.HasSuffix(input, ".pem") ||
-			strings.HasSuffix(input, ".crt") ||
-			strings.HasSuffix(input, ".cer") ||
-			strings.HasSuffix(input, ".key") {
+		/*
+			if strings.HasSuffix(input, ".pem") ||
+				strings.HasSuffix(input, ".crt") ||
+				strings.HasSuffix(input, ".cer") ||
+				strings.HasSuffix(input, ".key") {
+				return []string{input}, nil // single certificate
+			}*/
+		if checker.IsCertFile(input) {
 			return []string{input}, nil // single certificate
 		}
 		// otherwise, it's a text file with URLs

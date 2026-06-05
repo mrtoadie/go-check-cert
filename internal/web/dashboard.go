@@ -270,13 +270,13 @@ func renderDashboard(w http.ResponseWriter, r *http.Request) {
 
 	for _, res := range mergedResults {
 		switch res.Status {
-		case "VALID":
+		case constants.StatusValid:
 			page.OK++
-		case "WARNING", "SOON":
+		case constants.StatusWarning, constants.StatusSoon:
 			page.Warn++
-		case "EXPIRED":
+		case constants.StatusExpired:
 			page.Exp++
-		case "ERROR":
+		case constants.StatusError:
 			page.Err++
 		}
 	}

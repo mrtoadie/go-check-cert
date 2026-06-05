@@ -99,9 +99,9 @@ func ExportJSON(results []checker.CertInfo, filename string) error {
 // GetColor returns the ANSI color code for the given status
 func GetColor(status string) string {
 	switch status {
-	case "VALID":
+	case constants.StatusValid:
 		return constants.ColGreen
-	case "SOON", "WARNING":
+	case constants.StatusSoon, constants.StatusWarning:
 		return constants.ColYellow
 	default:
 		return constants.ColRed
@@ -128,10 +128,10 @@ func printSummary(results []checker.CertInfo) {
 	count := func(status string) int { return counts[status] }
 
 	fmt.Printf(" %sValid: %d%s | %sWarn: %d%s | %sExp: %d%s | %sErr: %d%s\n",
-		constants.ColGreen, count("VALID"), constants.ColReset,
-		constants.ColYellow, count("WARNING"), constants.ColReset,
-		constants.ColRed, count("EXPIRED"), constants.ColReset,
-		constants.ColRed, count("ERROR"), constants.ColReset)
+		constants.ColGreen, count(constants.StatusValid), constants.ColReset,
+		constants.ColYellow, count(constants.StatusWarning), constants.ColReset,
+		constants.ColRed, count(constants.StatusExpired), constants.ColReset,
+		constants.ColRed, count(constants.StatusError), constants.ColReset)
 	fmt.Printf("%s----------------------------------------%s\n", constants.ColBlue, constants.ColReset)
 }
 
@@ -184,7 +184,7 @@ func PrintAdvancedResults(results []checker.CertInfo) {
 		if !r.IsChainComplete && r.ChainError != "" {
 			fmt.Printf("   %sError: %s%s\n", constants.ColRed, r.ChainError, constants.ColReset)
 		} else if r.Error != nil {
-			fmt.Printf("   %sError: %s%s\n", constants.ColRed, r.ChainError, constants.ColReset)
+			fmt.Printf("   %sError: %s%s\n", constants.ColRed, r.Error.Error(), constants.ColReset)
 		}
 
 		if r.RootIssuer != "" {

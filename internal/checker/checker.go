@@ -2,6 +2,7 @@
 package checker
 
 import (
+	"cert-checker/internal/constants"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -196,14 +197,14 @@ func extractCertInfo(cert *x509.Certificate, source string, chain []*x509.Certif
 
 	// status determination
 	if info.DaysRemaining < 0 {
-		info.Status = "EXPIRED"
+		info.Status = constants.StatusExpired
 	} else if info.DaysRemaining < WarningThreshold {
-		info.Status = "WARNING"
+		info.Status = constants.StatusWarning
 	} else if info.DaysRemaining < SoonThreshold {
 		//info.Status = "SOON"
-		info.Status = "WARNING"
+		info.Status = constants.StatusWarning
 	} else {
-		info.Status = "VALID"
+		info.Status = constants.StatusValid
 	}
 
 	return info

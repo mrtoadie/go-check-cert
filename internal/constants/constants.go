@@ -21,4 +21,10 @@ const (
 	ColGreen              = "\033[32m"
 	ColYellow             = "\033[33m"
 	ColBlue               = "\033[34m"
+	// status
+	StatusValid   = "VALID"
+	StatusExpired = "EXPIRED"
+	StatusError   = "ERROR"
+	StatusWarning = "WARNING"
+	StatusSoon    = "SOON"
 )
